@@ -88,7 +88,7 @@ print(f"\nAverage email length: {avg_length:.0f} characters")
 #spam_df['clean_text'] = spam_df['text'].apply(clean_text)  # <-- use 'text' column
 
 # --- 3. SPLIT FEATURES AND LABELS ---
-X = spam_df['clean_text']
+X = spam_df['text']
 y = spam_df['label']
 
 # --- 4. TRAIN/TEST SPLIT ---
