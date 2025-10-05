@@ -9,7 +9,7 @@ from sklearn.metrics import classification_report
 # -------------------------
 # 1. Load your dataset
 # -------------------------
-file_path = r"C:\Users\damia\OneDrive\COS30049-Technology Innovation Project\Assignment2\Assignment Datasets\KaggleData\combined_data.csv"
+file_path = r"SpamDataset\combined_data.csv"
 df = pd.read_csv(file_path)
 
 X = df["text"]

@@ -14,7 +14,7 @@ from sklearn.metrics import (
 )
 
 # --- 1. LOAD DATASET ---
-file_path = r"C:\Users\damia\OneDrive\COS30049-Technology Innovation Project\Assignment2\Assignment Datasets\KaggleData\combined_data.csv"
+file_path = r"SpamDataset\combined_data.csv" #we need Prathams combined dataset!
 spam_df = pd.read_csv(file_path)
 
 # Inspect dataset
@@ -32,6 +32,72 @@ def clean_text(text):
     return text
 
 spam_df['clean_text'] = spam_df['text'].apply(clean_text)  # <-- use 'text' column
+
+# --- 2A. DATA PREPROCESSING & FEATURE ANALYSIS ---
+
+# Remove duplicate messages if any
+duplicates_before = spam_df.duplicated(subset='text').sum()
+print(f"Duplicates before removal: {duplicates_before}")
+spam_df = spam_df.drop_duplicates(subset='text', keep='first')
+duplicates_after = spam_df.duplicated(subset='text').sum()
+print(f"Duplicates after removal: {duplicates_after}\n")
+
+# --- Feature Engineering: numeric features derived from text ---
+def extract_features(text):
+    text = str(text)
+    num_links = len(re.findall(r'http\S+', text))
+    num_digits = len(re.findall(r'\d', text))
+    num_upper = sum(1 for c in text if c.isupper())
+    msg_length = len(text)
+    words = re.findall(r'\b\w+\b', text)
+    avg_word_len = np.mean([len(w) for w in words]) if words else 0
+    
+    # suspicious words commonly used in spam
+    suspicious_keywords = ['free', 'win', 'click', 'offer', 'money', 'urgent', 'credit', 'limited', 'buy', 'claim']
+    suspicious_count = sum(text.lower().count(word) for word in suspicious_keywords)
+    
+    # repetition ratio (most common word frequency / total words)
+    if words:
+        from collections import Counter
+        counts = Counter(words)
+        most_common = counts.most_common(1)[0][1]
+        repetition_ratio = most_common / len(words)
+    else:
+        repetition_ratio = 0
+
+    return pd.Series({
+        'num_links': num_links,
+        'num_digits': num_digits,
+        'num_upper': num_upper,
+        'msg_length': msg_length,
+        'avg_word_len': avg_word_len,
+        'suspicious_count': suspicious_count,
+        'repetition_ratio': repetition_ratio
+    })
+
+# Apply feature extraction
+spam_df = spam_df.join(spam_df['text'].apply(extract_features))
+
+# --- 2B. ANALYSE THESE FEATURES ---
+print("\n=== Basic Feature Statistics ===")
+print(spam_df[['num_links', 'num_digits', 'num_upper', 'msg_length', 
+               'avg_word_len', 'suspicious_count', 'repetition_ratio']].describe())
+
+# Compare averages between ham and spam
+print("\n=== Feature Means by Label ===")
+print(spam_df.groupby('label')[['num_links', 'num_digits', 'num_upper', 'msg_length',
+                                'avg_word_len', 'suspicious_count', 'repetition_ratio']].mean())
+
+# --- Optional: simple visualization ---
+import seaborn as sns
+import matplotlib.pyplot as plt
+
+plt.figure(figsize=(10,6))
+sns.boxplot(x='label', y='msg_length', data=spam_df)
+plt.title("Message Length Distribution by Class")
+plt.xlabel("Label (0=Ham, 1=Spam)")
+plt.ylabel("Message Length")
+plt.show()
 
 # --- 3. SPLIT FEATURES AND LABELS ---
 X = spam_df['clean_text']
@@ -75,7 +141,7 @@ for word, coef in top_spam_words:
 # --- CONFUSION MATRIX ---
 cm = confusion_matrix(y_test, y_pred)
 disp = ConfusionMatrixDisplay(confusion_matrix=cm, display_labels=["HAM (0)", "SPAM (1)"])
-disp.plot(cmap=plt.cm.Blues, values_format='d')
+disp.plot(cmap=plt.cm.Blues, values_format='d') # pyright: ignore[reportAttributeAccessIssue]
 plt.title("Confusion Matrix")
 plt.show()
 
@@ -109,9 +175,9 @@ plt.show()
 #import joblib
 
 # Save vectorizer
-#joblib.dump(vectorizer, r"C:\Users\damia\spam_vectorizer.pkl")
+#joblib.dump(vectorizer, r"ML_Vectorizer\spam_vectorizer.pkl")
 
 # Save model
-#joblib.dump(model, r"C:\Users\damia\spam_model.pkl")
+#joblib.dump(model, r"ML_Vectorizer\spam_model.pkl")
 
 #print("Model and vectorizer saved successfully!")

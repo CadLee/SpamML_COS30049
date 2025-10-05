@@ -4,8 +4,8 @@ import joblib
 import re
 
 # Load saved vectorizer and model
-vectorizer = joblib.load(r"C:\Users\damia\OneDrive\COS30049-Technology Innovation Project\Assignment2\TestMLModel\spam_vectorizer.pkl")
-model = joblib.load(r"C:\Users\damia\OneDrive\COS30049-Technology Innovation Project\Assignment2\TestMLModel\spam_model.pkl")
+vectorizer = joblib.load(r"TestMLModel\spam_vectorizer.pkl")
+model = joblib.load(r"TestMLModel\spam_model.pkl")
 
 # Text cleaning function
 def clean_text(text):
@@ -17,7 +17,7 @@ def clean_text(text):
 
 # --- 1. LOAD EMAILS FROM CSV ---
 # CSV should have a column named 'text' containing the email content
-file_path = r"C:\Users\damia\OneDrive\COS30049-Technology Innovation Project\Assignment2\TestMLModel\emails_to_test.csv"
+file_path = r"TestMLModel\emails_to_test.csv"
 emails_df = pd.read_csv(file_path)
 
 # Clean emails
@@ -38,4 +38,4 @@ emails_df['label'] = emails_df['pred_label'].map({0: 'HAM', 1: 'SPAM'})
 print(emails_df[['text', 'label', 'spam_prob']].head(20))
 
 # Optional: save predictions to a new CSV
-emails_df.to_csv(r"C:\Users\damia\OneDrive\COS30049-Technology Innovation Project\Assignment2\TestMLModel\emails_predictions.csv", index=False)
+emails_df.to_csv(r"TestMLModel\emails_predictions.csv", index=False)
