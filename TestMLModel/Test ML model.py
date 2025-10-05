@@ -43,7 +43,6 @@ def extract_features(df):
         return sum(words.count(w) > 1 for w in set(words))
     features["repeated_words"] = df["text"].apply(count_repeated_words)
     
-    # Suspicious words detection (using a *non-hardcoded* adaptive list)
     # Extract top frequent words from spam messages and mark their presence
     spam_texts = df[df["label"] == 1]["text"]
     common_spam_words = (
