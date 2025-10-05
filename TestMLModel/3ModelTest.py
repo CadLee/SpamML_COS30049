@@ -9,7 +9,7 @@ from sklearn.metrics import classification_report
 # -------------------------
 # 1. Load your dataset
 # -------------------------
-file_path = r"SpamDataset\combined_data.csv"
+file_path = r"C:\Users\damia\Downloads\combined_data.csv"
 df = pd.read_csv(file_path)
 
 X = df["text"]
@@ -19,13 +19,13 @@ y = df["label"]
 # 2. Split train/test
 # -------------------------
 X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.2, random_state=42, stratify=y
+    X, y, test_size=0.3, random_state=42, stratify=y
 )
 
 # -------------------------
 # 3. Vectorization (TF-IDF with unigrams + bigrams)
 # -------------------------
-vectorizer = TfidfVectorizer(stop_words="english", ngram_range=(1,2), max_features=10000)
+vectorizer = TfidfVectorizer(stop_words="english", ngram_range=(1,2), max_features=20)
 X_train_vect = vectorizer.fit_transform(X_train)
 X_test_vect = vectorizer.transform(X_test)
 

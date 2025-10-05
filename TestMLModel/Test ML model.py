@@ -14,7 +14,7 @@ from sklearn.metrics import (
 )
 
 # --- 1. LOAD DATASET ---
-file_path = r"SpamDataset\combined_data.csv" #we need Prathams combined dataset!
+file_path = r"C:\Users\damia\Downloads\combined_data.csv" #we need Prathams combined dataset!
 spam_df = pd.read_csv(file_path)
 
 # Inspect dataset
@@ -22,82 +22,71 @@ print("Columns:", spam_df.columns)
 print(spam_df.head())
 print("\nLabel distribution:\n", spam_df['label'].value_counts())  # 0=ham, 1=spam
 
-# --- 2. CLEAN TEXT --- 
-def clean_text(text):
-    text = str(text).lower()                     # lowercase
-    text = re.sub(r'http\S+', '', text)          # remove URLs
-    text = re.sub(r'[^a-z\s]', '', text)        # remove non-letter chars
-    text = re.sub(r'\s+', ' ', text).strip()    # remove extra spaces
-    text = re.sub(r'escapenumber|escapelong', '', text) # remove escapenumber & escapelong
-    return text
+# --- FEATURE ANALYSIS ---
 
-spam_df['clean_text'] = spam_df['text'].apply(clean_text)  # <-- use 'text' column
-
-# --- 2A. DATA PREPROCESSING & FEATURE ANALYSIS ---
-
-# Remove duplicate messages if any
-duplicates_before = spam_df.duplicated(subset='text').sum()
-print(f"Duplicates before removal: {duplicates_before}")
-spam_df = spam_df.drop_duplicates(subset='text', keep='first')
-duplicates_after = spam_df.duplicated(subset='text').sum()
-print(f"Duplicates after removal: {duplicates_after}\n")
-
-# --- Feature Engineering: numeric features derived from text ---
-def extract_features(text):
-    text = str(text)
-    num_links = len(re.findall(r'http\S+', text))
-    num_digits = len(re.findall(r'\d', text))
-    num_upper = sum(1 for c in text if c.isupper())
-    msg_length = len(text)
-    words = re.findall(r'\b\w+\b', text)
-    avg_word_len = np.mean([len(w) for w in words]) if words else 0
+def extract_features(df):
+    features = pd.DataFrame()
+    features["length_chars"] = df["text"].apply(lambda x: len(str(x)))
+    features["length_words"] = df["text"].apply(lambda x: len(str(x).split()))
     
-    # suspicious words commonly used in spam
-    suspicious_keywords = ['free', 'win', 'click', 'offer', 'money', 'urgent', 'credit', 'limited', 'buy', 'claim']
-    suspicious_count = sum(text.lower().count(word) for word in suspicious_keywords)
+    # Ratio of uppercase letters to total characters
+    features["upper_ratio"] = df["text"].apply(
+        lambda x: sum(1 for c in str(x) if c.isupper()) / max(1, len(str(x)))
+    )
     
-    # repetition ratio (most common word frequency / total words)
-    if words:
-        from collections import Counter
-        counts = Counter(words)
-        most_common = counts.most_common(1)[0][1]
-        repetition_ratio = most_common / len(words)
-    else:
-        repetition_ratio = 0
-
-    return pd.Series({
-        'num_links': num_links,
-        'num_digits': num_digits,
-        'num_upper': num_upper,
-        'msg_length': msg_length,
-        'avg_word_len': avg_word_len,
-        'suspicious_count': suspicious_count,
-        'repetition_ratio': repetition_ratio
-    })
+    # Number of links (before cleaning removes them)
+    features["num_links"] = df["text"].apply(lambda x: len(re.findall(r"http\S+", str(x))))
+    
+    # Repetitive words (e.g., repeated within message)
+    def count_repeated_words(text):
+        words = re.findall(r'\b\w+\b', str(text).lower())
+        return sum(words.count(w) > 1 for w in set(words))
+    features["repeated_words"] = df["text"].apply(count_repeated_words)
+    
+    # Suspicious words detection (using a *non-hardcoded* adaptive list)
+    # Extract top frequent words from spam messages and mark their presence
+    spam_texts = df[df["label"] == 1]["text"]
+    common_spam_words = (
+        pd.Series(" ".join(spam_texts).split())
+        .value_counts()
+        .head(30)
+        .index.tolist()
+    )
+    
+    features["suspicious_word_count"] = df["text"].apply(
+        lambda x: sum(word in str(x).split() for word in common_spam_words)
+    )
+    
+    return features
 
 # Apply feature extraction
-spam_df = spam_df.join(spam_df['text'].apply(extract_features))
+feature_df = extract_features(spam_df)
 
-# --- 2B. ANALYSE THESE FEATURES ---
-print("\n=== Basic Feature Statistics ===")
-print(spam_df[['num_links', 'num_digits', 'num_upper', 'msg_length', 
-               'avg_word_len', 'suspicious_count', 'repetition_ratio']].describe())
+# Combine features with labels
+analysis_df = pd.concat([feature_df, spam_df["label"]], axis=1)
 
-# Compare averages between ham and spam
-print("\n=== Feature Means by Label ===")
-print(spam_df.groupby('label')[['num_links', 'num_digits', 'num_upper', 'msg_length',
-                                'avg_word_len', 'suspicious_count', 'repetition_ratio']].mean())
+# --- DESCRIPTIVE STATS ---
+print("\n--- FEATURE ANALYSIS SUMMARY ---")
+print(analysis_df.groupby("label").mean().round(2))  # Compare HAM vs SPAM averages
 
-# --- Optional: simple visualization ---
-import seaborn as sns
-import matplotlib.pyplot as plt
+# Overall averages
+print("\nOverall averages:")
+print(feature_df.mean().round(2))
 
-plt.figure(figsize=(10,6))
-sns.boxplot(x='label', y='msg_length', data=spam_df)
-plt.title("Message Length Distribution by Class")
-plt.xlabel("Label (0=Ham, 1=Spam)")
-plt.ylabel("Message Length")
-plt.show()
+# Example: Average email length
+avg_length = feature_df["length_chars"].mean()
+print(f"\nAverage email length: {avg_length:.0f} characters")
+
+# --- 2. CLEAN TEXT --- 
+#def clean_text(text):
+#    text = str(text).lower()                     # lowercase
+#    text = re.sub(r'http\S+', '', text)          # remove URLs
+#    text = re.sub(r'[^a-z\s]', '', text)        # remove non-letter chars
+#    text = re.sub(r'\s+', ' ', text).strip()    # remove extra spaces
+#    text = re.sub(r'escapenumber|escapelong', '', text) # remove escapenumber & escapelong
+#    return text
+
+#spam_df['clean_text'] = spam_df['text'].apply(clean_text)  # <-- use 'text' column
 
 # --- 3. SPLIT FEATURES AND LABELS ---
 X = spam_df['clean_text']
@@ -106,13 +95,13 @@ y = spam_df['label']
 # --- 4. TRAIN/TEST SPLIT ---
 X_train, X_test, y_train, y_test = train_test_split(
     X, y,
-    test_size=0.25,
+    test_size=0.7,
     random_state=42,
     stratify=y
 )
 
 # --- 5. VECTORIZE TEXT ---
-vectorizer = TfidfVectorizer(stop_words='english', max_features=5000)
+vectorizer = TfidfVectorizer(stop_words='english', max_features=20)
 X_train_vect = vectorizer.fit_transform(X_train)
 X_test_vect = vectorizer.transform(X_test)
 
