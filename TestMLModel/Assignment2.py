@@ -22,6 +22,11 @@ print("Columns:", spam_df.columns)
 print(spam_df.head())
 print("\nLabel distribution:\n", spam_df['label'].value_counts())
 
+# Remove exact duplicate texts
+spam_df.drop_duplicates(subset=["text"], inplace=True)
+print("\n")
+print(f"Dataset after removing duplicates: {len(spam_df)} rows")
+
 # 2. FEATURE ENGINEERING (on RAW dataset)
 
 def extract_features(df):
