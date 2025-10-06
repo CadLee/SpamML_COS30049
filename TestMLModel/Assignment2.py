@@ -49,7 +49,7 @@ feature_df = extract_features(spam_df)
 analysis_df = pd.concat([feature_df, spam_df["label"]], axis=1)
 
 
-print("\nFEATURE ANALYSIS SUMMARY")
+print("\nFEATURE ANALYSIS SUMMARY PER ROW")
 print(analysis_df.groupby("label").mean().round(2))
 overall_avg = feature_df.mean().round(2).to_frame("Overall Average")
 print("\n")
