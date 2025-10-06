@@ -15,17 +15,20 @@ from sklearn.metrics import (
 import joblib
 
 # 1. LOAD DATASET
-file_path = r"C:\Users\damia\Downloads\combined_data.csv"
+file_path = r"C:\Users\damia\Downloads\combined_data.csv" #ENTER COMBINED DATA SET LOCATION HERE!
 spam_df = pd.read_csv(file_path)
 
 print("Columns:", spam_df.columns)
 print(spam_df.head())
 print("\nLabel distribution:\n", spam_df['label'].value_counts())
 
-# Remove exact duplicate texts
+#remove duplicated + before and after
+before = len(spam_df)
 spam_df.drop_duplicates(subset=["text"], inplace=True)
+after = len(spam_df)
+removed = before - after
 print("\n")
-print(f"Dataset after removing duplicates: {len(spam_df)} rows")
+print(f"\nRemoved {removed} duplicate texts (from {before} → {after} rows)")
 
 # 2. FEATURE ENGINEERING (on RAW dataset)
 
@@ -77,8 +80,8 @@ vectorizer = TfidfVectorizer(stop_words="english", max_features=20)
 X_train_vect = vectorizer.fit_transform(X_train)
 X_test_vect = vectorizer.transform(X_test)
 
-# Save the vectorizer once
-vec_path = r"C:\Users\damia\Downloads\spam_vectorizer.pkl"
+#save vectorizer
+vec_path = r"C:\Users\damia\Downloads\spam_vectorizer.pkl" #ENTER LOCATION TO SAVE VECTORIZER!
 joblib.dump(vectorizer, vec_path)
 print("\n")
 print(f"Saved vectorizer: {vec_path}")
@@ -154,7 +157,7 @@ for name, model in models.items():
     plt.show()
 
     # Save the model only
-    model_path = fr"C:\Users\damia\Downloads\spam_model_{name}.pkl"
+    model_path = fr"C:\Users\damia\Downloads\spam_model_{name}.pkl" #ENTER LOCATION TO SAVE MODELS!
     joblib.dump(model, model_path)
     print(f"Saved {name} model: {model_path}")
 
