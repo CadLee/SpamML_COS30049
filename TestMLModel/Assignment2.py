@@ -15,7 +15,7 @@ from sklearn.metrics import (
 import joblib
 
 # 1. LOAD DATASET
-file_path = r"C:\Users\damia\Downloads\combined_data.csv" #ENTER COMBINED DATA SET LOCATION HERE!
+file_path = r"C:\Users\damia\Downloads\combined_data2.csv" #ENTER COMBINED DATA SET LOCATION HERE!
 spam_df = pd.read_csv(file_path)
 
 print("Columns:", spam_df.columns)
