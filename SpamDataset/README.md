@@ -143,13 +143,13 @@ The `clean_text()` function processes text by:
 - Stripping escape sequences
 
 #### 5. Train/Test Split
-- **Split ratio**: 70% training, 30% testing
+- **Split ratio**: 20% training, 80% testing
 - **Stratification**: Maintains class distribution
 - **Random state**: 42 (for reproducibility)
 
 #### 6. TF-IDF Vectorization
 - **Stop words**: English
-- **Max features**: 20
+- **Max features**: 100
 - Converts cleaned text into numerical features
 
 ---
