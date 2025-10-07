@@ -80,7 +80,7 @@ vectorizer = TfidfVectorizer(stop_words="english", max_features=100)
 X_train_vect = vectorizer.fit_transform(X_train)
 X_test_vect = vectorizer.transform(X_test)
 
-# Save vectorizer
+# Save the vectorizer
 vec_path = r"C:\Users\damia\Downloads\spam_vectorizer.pkl" #ENTER LOCATION TO SAVE VECTORIZER!
 joblib.dump(vectorizer, vec_path)
 print("\n")
@@ -156,7 +156,7 @@ for name, model in models.items():
     plt.tight_layout(rect=[0, 0.03, 1, 0.95]) # pyright: ignore[reportArgumentType]
     plt.show()
 
-    # Save the model only
+    # Save each model
     model_path = fr"C:\Users\damia\Downloads\spam_model_{name}.pkl" #ENTER LOCATION TO SAVE MODELS!
     joblib.dump(model, model_path)
     print(f"Saved {name} model: {model_path}")
