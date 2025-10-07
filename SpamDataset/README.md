@@ -53,6 +53,58 @@ python -c "import pandas, numpy, sklearn, joblib; print('All packages installed 
 
 ---
 
+
+
+## Configuration and Customization
+
+Before running the project, you need to update several file paths in the code to match your system. Below are the specific lines that require modification:
+
+### Files to Update: `Assignment2.py`
+
+Open `Assignment2.py` and update the following lines:
+
+#### **Line 18: Dataset Path**
+```python
+file_path = r"C:\Users\damia\Downloads\combined_data.csv"
+
+Change to: Your actual path to the combined_data.csv file
+file_path = r"C:\Users\YOUR_USERNAME\YOUR_FOLDER\combined_data.csv"
+Line 84: Visualization Save Path (Optional)
+Current:
+plt.savefig(r'C:\Users\damia\Downloads\confusion_matrix_{model_name}.png')
+Change to: Your desired location for saving plots (or remove this line if you don't want to save plots)
+plt.savefig(r'C:\Users\YOUR_USERNAME\YOUR_FOLDER\confusion_matrix_{model_name}.png')
+Line 160: Model Save Path
+Current:
+save_path = r"C:\Users\damia\Downloads\"
+Change to: Your desired location for saving trained models
+save_path = r"C:\Users\YOUR_USERNAME\YOUR_FOLDER\"
+Files to Update: ML_Simulation.py
+If you plan to use the prediction script, update these paths:
+Line 6: Vectorizer Path
+Current:
+vectorizer = joblib.load('C:/Users/damia/Downloads/spam_vectorizer.pkl')
+Change to: Path where your vectorizer was saved
+vectorizer = joblib.load('C:/Users/YOUR_USERNAME/YOUR_FOLDER/spam_vectorizer.pkl')
+Line 7: Model Path
+Current:
+model = joblib.load('C:/Users/damia/Downloads/spam_model_LogisticRegression.pkl')
+Change to: Path where your model was saved
+model = joblib.load('C:/Users/YOUR_USERNAME/YOUR_FOLDER/spam_model_LogisticRegression.pkl')
+Line 20: Test Email CSV Path
+Current:
+emails_df = pd.read_csv('TestMLModel/emails_to_test.csv')
+Change to: Path to your email test file
+emails_df = pd.read_csv('YOUR_PATH/emails_to_test.csv')
+Quick Setup Checklist
+
+Update dataset path (Assignment2.py, line 18)
+Update model save path (Assignment2.py, line 160)
+Update plot save path if needed (Assignment2.py, line 84)
+Update vectorizer load path (ML_Simulation.py, line 6)
+Update model load path (ML_Simulation.py, line 7)
+Update test email CSV path (ML_Simulation.py, line 20)
+
 ## Data Processing
 
 ### Dataset Requirements
