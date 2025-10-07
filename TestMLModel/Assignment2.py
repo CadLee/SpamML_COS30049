@@ -22,7 +22,7 @@ print("Columns:", spam_df.columns)
 print(spam_df.head())
 print("\nLabel distribution:\n", spam_df['label'].value_counts())
 
-#remove duplicated + before and after
+# Remove duplicated + before and after
 before = len(spam_df)
 spam_df.drop_duplicates(subset=["text"], inplace=True)
 after = len(spam_df)
@@ -80,7 +80,7 @@ vectorizer = TfidfVectorizer(stop_words="english", max_features=100)
 X_train_vect = vectorizer.fit_transform(X_train)
 X_test_vect = vectorizer.transform(X_test)
 
-#save vectorizer
+# Save vectorizer
 vec_path = r"C:\Users\damia\Downloads\spam_vectorizer.pkl" #ENTER LOCATION TO SAVE VECTORIZER!
 joblib.dump(vectorizer, vec_path)
 print("\n")
@@ -105,7 +105,7 @@ for name, model in models.items():
     print("Classification Report:\n", classification_report(y_test, y_pred))
     results[name] = acc
 
-    # --- Plotting Confusion Matrix, ROC, PR Curve ---
+    # Plotting Confusion Matrix, ROC, PR Curve
     fig, axes = plt.subplots(1, 3, figsize=(18, 5))
     fig.suptitle(f"Model Evaluation: {name}", fontsize=14, weight="bold")
 
