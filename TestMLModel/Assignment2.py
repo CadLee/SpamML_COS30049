@@ -72,11 +72,11 @@ X = spam_df["clean_text"]
 y = spam_df["label"]
 
 X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.7, random_state=42, stratify=y
+    X, y, test_size=0.8, random_state=42, stratify=y
 )
 
 # 5. TF-IDF VECTORIZATION (fit once)
-vectorizer = TfidfVectorizer(stop_words="english", max_features=20)
+vectorizer = TfidfVectorizer(stop_words="english", max_features=100)
 X_train_vect = vectorizer.fit_transform(X_train)
 X_test_vect = vectorizer.transform(X_test)
 
