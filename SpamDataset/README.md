@@ -262,6 +262,10 @@ LinearSVM: {acc:.4f}
 
 Choose the model with the highest accuracy for your predictions by loading the corresponding `.pkl` file.
 
+## Model for Prediction
+
+Once you have chosen your desired models `.pkl` you now deploy it along with the vectorizer to analyse spam emails in your programs.
+
 ---
 
 ## Notes
