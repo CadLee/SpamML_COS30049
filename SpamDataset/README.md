@@ -7,7 +7,6 @@ This project creates an three machine learning models to detect spam emails: **L
 
 ## Table of Contents
 - [Environment Setup](#environment-setup)
-- [Data Processing](#data-processing)
 - [Model Training](#model-training)
 - [Project Files](#project-files)
 
