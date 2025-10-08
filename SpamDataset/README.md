@@ -1,7 +1,7 @@
 # Spam Email Detection - Machine Learning Project
 
 ## Overview
-This project implements a spam email detection system using three machine learning models: **Logistic Regression**, **Naive Bayes**, and **Linear SVM**. The system processes email text data, extracts features, trains classification models, and provides predictions on new emails.
+This project creates an three machine learning models to detect spam emails: **Logistic Regression**, **Naive Bayes**, and **Linear SVM**. The system processes email text data, extracts features, trains classification models.
 
 ---
 
@@ -9,7 +9,6 @@ This project implements a spam email detection system using three machine learni
 - [Environment Setup](#environment-setup)
 - [Data Processing](#data-processing)
 - [Model Training](#model-training)
-- [Making Predictions](#making-predictions)
 - [Project Files](#project-files)
 
 ---
@@ -79,31 +78,10 @@ Current:
 save_path = r"C:\Users\damia\Downloads\"
 Change to: Your desired location for saving trained models
 save_path = r"C:\Users\YOUR_USERNAME\YOUR_FOLDER\"
-Files to Update: ML_Simulation.py
-If you plan to use the prediction script, update these paths:
-Line 6: Vectorizer Path
-Current:
-vectorizer = joblib.load('C:/Users/damia/Downloads/spam_vectorizer.pkl')
-Change to: Path where your vectorizer was saved
-vectorizer = joblib.load('C:/Users/YOUR_USERNAME/YOUR_FOLDER/spam_vectorizer.pkl')
-Line 7: Model Path
-Current:
-model = joblib.load('C:/Users/damia/Downloads/spam_model_LogisticRegression.pkl')
-Change to: Path where your model was saved
-model = joblib.load('C:/Users/YOUR_USERNAME/YOUR_FOLDER/spam_model_LogisticRegression.pkl')
-Line 20: Test Email CSV Path
-Current:
-emails_df = pd.read_csv('TestMLModel/emails_to_test.csv')
-Change to: Path to your email test file
-emails_df = pd.read_csv('YOUR_PATH/emails_to_test.csv')
-Quick Setup Checklist
 
 Update dataset path (Assignment2.py, line 18)
 Update model save path (Assignment2.py, line 160)
 Update plot save path if needed (Assignment2.py, line 84)
-Update vectorizer load path (ML_Simulation.py, line 6)
-Update model load path (ML_Simulation.py, line 7)
-Update test email CSV path (ML_Simulation.py, line 20)
 
 ## Data Processing
 
@@ -160,7 +138,7 @@ The `clean_text()` function processes text by:
 
 ```bash
 # Navigate to project directory
-cd SpamML_COS30049/TestMLModel
+cd <your directory>
 
 # Run training script
 python Assignment2.py
@@ -207,78 +185,6 @@ spam_vectorizer.pkl
 
 ---
 
-## Making Predictions
-
-### Option 1: Predict on Bulk Emails (Recommended)
-
-Use `ML_Simulation.py` to predict on multiple emails from a CSV file.
-
-#### Step 1: Prepare Your Email CSV
-
-Create a CSV file with a `text` column containing emails:
-
-```csv
-text
-"Congratulations! You've won a free prize. Click here now!"
-"Meeting scheduled for tomorrow at 3 PM."
-"URGENT: Your account will be suspended. Verify now!"
-```
-
-Save as `emails_to_test.csv` in the `TestMLModel/` folder.
-
-#### Step 2: Update File Paths
-
-In `ML_Simulation.py`, ensure these paths are correct:
-- Line 6: Path to vectorizer `.pkl` file
-- Line 7: Path to model `.pkl` file  
-- Line 20: Path to your email CSV file
-
-#### Step 3: Run Predictions
-
-```bash
-python ML_Simulation.py
-```
-
-#### Output
-
-- Displays first 20 predictions with:
-  - Original email text
-  - Predicted label (HAM/SPAM)
-  - Spam probability (0-1)
-- Saves all predictions to `emails_predictions.csv`
-
-### Option 2: Predict Single Emails in Code
-
-Create a new Python file or add to existing script:
-
-```python
-import joblib
-import re
-import pandas as pd
-
-# Load saved model and vectorizer
-vectorizer = joblib.load('TestMLModel/spam_vectorizer.pkl')
-model = joblib.load('TestMLModel/spam_model_LogisticRegression.pkl')
-
-# Clean text function
-def clean_text(text):
-    text = str(text).lower()
-    text = re.sub(r'http\S+', '', text)
-    text = re.sub(r'[^a-z\s]', '', text)
-    text = re.sub(r'\s+', ' ', text).strip()
-    return text
-
-# Predict on new email
-new_email = "Congratulations! You've won $1000. Claim now!"
-cleaned = clean_text(new_email)
-vectorized = vectorizer.transform([cleaned])
-prediction = model.predict(vectorized)[0]
-
-result = "SPAM" if prediction == 1 else "HAM"
-print(f"Prediction: {result}")
-```
-
----
 
 ## Project Files
 
@@ -286,18 +192,13 @@ print(f"Prediction: {result}")
 
 | File | Purpose |
 |------|---------|
-| `Assignment2.py` | **Main training script** - trains all 3 models with feature engineering and visualization |
-| `ML_Simulation.py` | **Batch prediction script** - predicts on multiple emails from CSV |
-| `3ModelTest.py` | Testing script - simplified version for quick model comparison |
-| `FinalDraft.py` | Alternative training script (not used in final submission) |
+| `Assignment2.py` | **Main training script** - trains all 3 models with feature engineering and 
 
 ### Data Files
 
 | File | Description |
 |------|-------------|
 | `combined_data.csv` | Training dataset (text + labels) |
-| `emails_to_test.csv` | Sample emails for prediction |
-| `emails_predictions.csv` | Prediction results output |
 
 ### Model Files (Generated)
 
@@ -322,17 +223,8 @@ conda install pandas numpy matplotlib scikit-learn joblib -y
 
 ### 2. Train Models
 ```bash
-cd SpamML_COS30049/TestMLModel
 python Assignment2.py
 ```
-
-### 3. Make Predictions
-```bash
-# Prepare your emails_to_test.csv file
-python ML_Simulation.py
-```
-
----
 
 ## Troubleshooting
 
@@ -349,7 +241,6 @@ conda activate spam_detection
 **Solution**: 
 1. Run `Assignment2.py` first to train and save models
 2. Check the save path in `Assignment2.py` (line 160)
-3. Update load paths in `ML_Simulation.py` (lines 6-7) to match
 
 ### Issue: Import errors for sklearn
 **Solution**: 
