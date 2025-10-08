@@ -222,7 +222,7 @@ Choose the model with the highest accuracy for your predictions by loading the c
 
 ## Model for Prediction
 
-Once you can have chosen your desired models `.pkl` you now deploy it along with the vectorizer to analyse spam emails in your programs.
+Once you have chosen your desired model `.pkl` you may now deploy it along with the vectorizer to analyse spam emails in your programs.
 
 ---
 
