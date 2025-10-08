@@ -15,35 +15,24 @@ This project creates an three machine learning models to detect spam emails: **L
 ## Environment Setup
 
 ### Prerequisites
-- Anaconda or Miniconda installed
+- Anaconda or Miniconda installed (optional)
 - Python 3.8 or higher
 
-### Step 1: Create Conda Environment
-
-Open your terminal/command prompt and run:
-
-```bash
-# Create new environment
-conda create -n spam_detection python=3.10 -y
-
-# Activate environment
-conda activate spam_detection
-```
-
-### Step 2: Install Required Libraries
+### Step 1: Install Required Libraries
 
 ```bash
 # Install data science libraries
 conda install pandas numpy matplotlib -y
-
-# Install scikit-learn
 conda install scikit-learn -y
-
-# Install joblib
 conda install joblib -y
 ```
+#### Or use terminal pip commands:
+```
+pip install pandas numpy matplotlib
+pip install scikit-learn joblib
+```
 
-### Step 3: Verify Installation
+### Step 2: Verify Installation
 
 ```bash
 python -c "import pandas, numpy, sklearn, joblib; print('All packages installed successfully!')"
@@ -61,23 +50,33 @@ Before running the project, you need to update several file paths in the code to
 
 Open `Assignment2.py` and update the following lines:
 
-#### **Line 18: Dataset Path**
+ **Line 18: Dataset Path**
 ```python
 file_path = r"C:\Users\damia\Downloads\combined_data.csv"
-
+```
 Change to: Your actual path to the combined_data.csv file
+
+```python
 file_path = r"C:\Users\YOUR_USERNAME\YOUR_FOLDER\combined_data.csv"
+```
 Line 84: Visualization Save Path (Optional)
 Current:
+```python
 plt.savefig(r'C:\Users\damia\Downloads\confusion_matrix_{model_name}.png')
+```
 Change to: Your desired location for saving plots (or remove this line if you don't want to save plots)
+```python
 plt.savefig(r'C:\Users\YOUR_USERNAME\YOUR_FOLDER\confusion_matrix_{model_name}.png')
+```
 Line 160: Model Save Path
 Current:
+```python
 save_path = r"C:\Users\damia\Downloads\"
+```
 Change to: Your desired location for saving trained models
+```python
 save_path = r"C:\Users\YOUR_USERNAME\YOUR_FOLDER\"
-
+```
 Update dataset path (Assignment2.py, line 18)
 Update model save path (Assignment2.py, line 160)
 Update plot save path if needed (Assignment2.py, line 84)
@@ -208,47 +207,6 @@ spam_vectorizer.pkl
 
 ---
 
-## Quick Start Guide
-
-### 1. First Time Setup
-```bash
-# Create and activate environment
-conda create -n spam_detection python=3.10 -y
-conda activate spam_detection
-
-# Install dependencies
-conda install pandas numpy matplotlib scikit-learn joblib -y
-```
-
-### 2. Train Models
-```bash
-python Assignment2.py
-```
-
-## Troubleshooting
-
-### Issue: `FileNotFoundError` when loading dataset
-**Solution**: Update the `file_path` in `Assignment2.py` (line 18) to match your dataset location.
-
-### Issue: `ModuleNotFoundError`
-**Solution**: Ensure conda environment is activated:
-```bash
-conda activate spam_detection
-```
-
-### Issue: Model files not found during prediction
-**Solution**: 
-1. Run `Assignment2.py` first to train and save models
-2. Check the save path in `Assignment2.py` (line 160)
-
-### Issue: Import errors for sklearn
-**Solution**: 
-```bash
-conda install scikit-learn -y
-```
-
----
-
 ## Model Performance
 
 After training, compare model accuracies from the final output:
@@ -264,7 +222,7 @@ Choose the model with the highest accuracy for your predictions by loading the c
 
 ## Model for Prediction
 
-Once you have chosen your desired models `.pkl` you now deploy it along with the vectorizer to analyse spam emails in your programs.
+Once you can have chosen your desired models `.pkl` you now deploy it along with the vectorizer to analyse spam emails in your programs.
 
 ---
 
@@ -282,11 +240,9 @@ Once you have chosen your desired models `.pkl` you now deploy it along with the
 
 ## Contributors
 
-COS30049 - Computing Technology Innovation Project  
-Swinburne University of Technology
+Damian Moisidis
+Mufid Kadli
+Pratham Kumar
 
----
-
-## License
-
-COS30049 Assignment 2.
+***COS30049 - Computing Technology Innovation Project  
+Swinburne University of Technology***
