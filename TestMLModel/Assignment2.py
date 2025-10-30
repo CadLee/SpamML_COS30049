@@ -15,7 +15,7 @@ from sklearn.metrics import (
 import joblib
 
 # 1. LOAD DATASET
-file_path = r"C:\Users\damia\Downloads\combined_data2.csv" #ENTER COMBINED DATA SET LOCATION HERE!
+file_path = r"C:\Users\muffi\Desktop\Assignment 2 source code\combined_data.csv" #ENTER COMBINED DATA SET LOCATION HERE!
 spam_df = pd.read_csv(file_path)
 
 print("Columns:", spam_df.columns)
@@ -81,7 +81,7 @@ X_train_vect = vectorizer.fit_transform(X_train)
 X_test_vect = vectorizer.transform(X_test)
 
 # Save the vectorizer
-vec_path = r"C:\Users\damia\Downloads\spam_vectorizer.pkl" #ENTER LOCATION TO SAVE VECTORIZER!
+vec_path = r"spam_vectorizer.pkl" #ENTER LOCATION TO SAVE VECTORIZER!
 joblib.dump(vectorizer, vec_path)
 print("\n")
 print(f"Saved vectorizer: {vec_path}")
@@ -157,7 +157,7 @@ for name, model in models.items():
     plt.show()
 
     # Save each model
-    model_path = fr"C:\Users\damia\Downloads\spam_model_{name}.pkl" #ENTER LOCATION TO SAVE MODELS!
+    model_path = fr"spam_model_{name}.pkl" #ENTER LOCATION TO SAVE MODELS!
     joblib.dump(model, model_path)
     print(f"Saved {name} model: {model_path}")
 
