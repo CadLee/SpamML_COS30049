@@ -45,7 +45,7 @@ class EmailInput(BaseModel):
         }
 
 class BatchEmailInput(BaseModel):
-    emails: List[str] = Field(..., min_items=1, max_items=100)
+    emails: List[str] = Field(..., min_items=1, max_items=100) # type: ignore
 
 # Response models
 class PredictionResponse(BaseModel):
