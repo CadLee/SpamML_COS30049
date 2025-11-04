@@ -87,21 +87,33 @@ function Charts({ predictions }) {
   };
 
   // Confidence histogram (binned)
-  const bins = [0, 20, 40, 60, 80, 100];
-  const binCounts = bins.map((b, i) => {
-    if (i === bins.length - 1) return predictions.filter(p => p.confidence_percentage >= b).length;
-    return predictions.filter(p => p.confidence_percentage >= b && p.confidence_percentage < bins[i+1]).length;
+
+  // Initialises empty chart prior to predictions.
+  const [histogramData, setHistogramData] = useState({
+    labels: [],
+    datasets: [{ label: 'Count', data: [], backgroundColor: '#1e3a8a80', borderColor: '#1e3a8a', borderWidth: 2 }]
   });
-  const histogramData = {
-    labels: ['0-20%', '20-40%', '40-60%', '60-80%', '80-100%'],
-    datasets: [{
-      label: 'Count',
-      data: binCounts,
-      backgroundColor: '#1e3a8a80',
-      borderColor: '#1e3a8a',
-      borderWidth: 2
-    }]
-  };
+
+  // Ensures chart is dynamically updated once prediction occurs.
+  useEffect(() => {
+    const bins = [0, 20, 40, 60, 80, 100];
+    const binCounts = bins.map((b, i) => {
+      if (i === bins.length - 1) return predictions.filter(p => p.confidence_percentage >= b).length;
+      return predictions.filter(p => p.confidence_percentage >= b && p.confidence_percentage < bins[i + 1]).length;
+    });
+
+    setHistogramData({
+      labels: ['0-20%', '20-40%', '40-60%', '60-80%', '80-100%'],
+      datasets: [{
+        label: 'Count',
+        data: binCounts,
+        backgroundColor: '#1e3a8a80',
+        borderColor: '#1e3a8a',
+        borderWidth: 2
+      }]
+    });
+  }, [predictions]);
+  
   const histogramOptions = {
     responsive: true,
     plugins: { legend: { display: false } },
