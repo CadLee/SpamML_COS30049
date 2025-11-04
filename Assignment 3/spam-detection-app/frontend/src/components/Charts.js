@@ -287,7 +287,7 @@ function Charts({ predictions }) {
           <Grid item xs={12}>
             <Paper elevation={3} sx={{ p:3, borderRadius:3 }}>
               <Box sx={{ display:'flex', justifyContent:'space-between', mb:2 }}>
-                <Typography variant="h6" sx={{ fontWeight:600 }}>📈 Confidence Timeline</Typography>
+                <Typography variant="h6" sx={{ fontWeight:600 }}>Confidence Timeline</Typography>
                 <Tooltip title="Export Chart">
                   <IconButton onClick={()=>exportChart(chartRefs.timeline,'confidence_timeline')}><DownloadIcon/></IconButton>
                 </Tooltip>
