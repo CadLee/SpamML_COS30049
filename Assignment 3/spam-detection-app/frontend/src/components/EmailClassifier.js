@@ -8,6 +8,8 @@
  * - Quick-load example emails for testing
  * - Comprehensive error handling with user-friendly messages
  * - Smooth animations and loading states
+ * - Drag & Drop .txt file upload
+ * - Tutorial modal guide
  * 
  * @component
  * @param {Function} onPrediction - Callback function when prediction completes
@@ -15,17 +17,22 @@
  * @author Coast Guard - Group 1
  */
 
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   Paper, TextField, Button, Box, Typography, Alert, CircularProgress,
-  Card, CardContent, Chip, Grid, LinearProgress, IconButton, Divider
+  Card, CardContent, Chip, Grid, LinearProgress, IconButton, Divider,
+  Dialog, DialogTitle, DialogContent, DialogActions, Tooltip
 } from '@mui/material';
 import {
   Send as SendIcon,
   CheckCircle as CheckCircleIcon,
   Warning as WarningIcon,
   Clear as ClearIcon,
-  ContentCopy as CopyIcon
+  ContentCopy as CopyIcon,
+  CloudUpload as CloudUploadIcon,
+  Description as DescriptionIcon,
+  Help as HelpIcon,
+  Close as CloseIcon
 } from '@mui/icons-material';
 import axios from 'axios';
 
@@ -41,6 +48,14 @@ function EmailClassifier({ onPrediction }) {
   
   // State: Error messages for user feedback
   const [error, setError] = useState('');
+
+  // : Drag & Drop states
+  const [dragActive, setDragActive] = useState(false);
+  const [uploadedFileName, setUploadedFileName] = useState('');
+  const fileInputRef = useRef(null);
+
+  // : Tutorial modal state
+  const [tutorialOpen, setTutorialOpen] = useState(false);
 
   // Calculate text statistics for user feedback
   const characterCount = emailText.length;
@@ -115,6 +130,69 @@ function EmailClassifier({ onPrediction }) {
   };
 
   /**
+   * : Handle drag events for file upload
+   */
+  const handleDrag = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === "dragenter" || e.type === "dragover") {
+      setDragActive(true);
+    } else if (e.type === "dragleave") {
+      setDragActive(false);
+    }
+  };
+
+  /**
+   * Handle file drop
+   */
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+
+    const files = e.dataTransfer.files;
+    if (files && files[0]) {
+      handleFileUpload(files[0]);
+    }
+  };
+
+  /**
+   * Handle file input change (click to select)
+   */
+  const handleFileInputChange = (e) => {
+    if (e.target.files && e.target.files[0]) {
+      handleFileUpload(e.target.files[0]);
+    }
+  };
+
+  /**
+   *  Process uploaded .txt file
+   */
+  const handleFileUpload = (file) => {
+    // Check if file is .txt
+    if (!file.name.endsWith('.txt')) {
+      setError('Please upload a .txt file only');
+      return;
+    }
+
+    const reader = new FileReader();
+    
+    reader.onload = (e) => {
+      const text = e.target.result;
+      setEmailText(text);
+      setUploadedFileName(file.name);
+      setError('');
+      setResult(null);
+    };
+
+    reader.onerror = () => {
+      setError('Failed to read file');
+    };
+
+    reader.readAsText(file);
+  };
+
+  /**
    * Clears input field and resets component state
    * Allows user to start fresh classification
    */
@@ -122,6 +200,10 @@ function EmailClassifier({ onPrediction }) {
     setEmailText('');
     setResult(null);
     setError('');
+    setUploadedFileName('');
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
   };
 
   /**
@@ -158,6 +240,7 @@ function EmailClassifier({ onPrediction }) {
     setEmailText(example);
     setResult(null);
     setError('');
+    setUploadedFileName('');
   };
 
   /**
@@ -173,6 +256,19 @@ function EmailClassifier({ onPrediction }) {
 
   return (
     <Box sx={{ mb: 6 }}>
+      {/*  Tutorial Button */}
+      <Box sx={{ display: 'flex', justifyContent: 'flex-end', mb: 2 }}>
+        <Tooltip title="How to use this system">
+          <Button
+            variant="outlined"
+            startIcon={<HelpIcon />}
+            onClick={() => setTutorialOpen(true)}
+          >
+            Tutorial
+          </Button>
+        </Tooltip>
+      </Box>
+
       <Paper elevation={0} sx={{ p: 4, bgcolor: 'background.paper', border: '1px solid', borderColor: 'divider' }}>
         
         {/* Section Header */}
@@ -181,6 +277,56 @@ function EmailClassifier({ onPrediction }) {
           <Typography variant="h5" sx={{ fontWeight: 600 }}>
             Email Classification
           </Typography>
+        </Box>
+
+        {/*  Drag and Drop Zone */}
+        <Box
+          onDragEnter={handleDrag}
+          onDragLeave={handleDrag}
+          onDragOver={handleDrag}
+          onDrop={handleDrop}
+          onClick={() => fileInputRef.current?.click()}
+          sx={{
+            mb: 3,
+            p: 4,
+            border: '2px dashed',
+            borderColor: dragActive ? 'primary.main' : 'grey.300',
+            backgroundColor: dragActive ? 'action.hover' : 'background.paper',
+            cursor: 'pointer',
+            transition: 'all 0.3s ease',
+            textAlign: 'center',
+            '&:hover': {
+              borderColor: 'primary.main',
+              backgroundColor: 'action.hover'
+            }
+          }}
+        >
+          <CloudUploadIcon 
+            sx={{ 
+              fontSize: 48, 
+              color: dragActive ? 'primary.main' : 'grey.400',
+              mb: 1
+            }} 
+          />
+          <Typography variant="body1" color="text.secondary">
+            Drag & drop an email (.txt) file here, or click to select
+          </Typography>
+          {uploadedFileName && (
+            <Chip
+              icon={<DescriptionIcon />}
+              label={uploadedFileName}
+              color="primary"
+              sx={{ mt: 2 }}
+              onDelete={handleClear}
+            />
+          )}
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept=".txt"
+            style={{ display: 'none' }}
+            onChange={handleFileInputChange}
+          />
         </Box>
         
         <form onSubmit={handleSubmit}>
@@ -355,6 +501,105 @@ function EmailClassifier({ onPrediction }) {
           </Grid>
         </Box>
       </Paper>
+
+      {/* Tutorial Modal */}
+      <Dialog
+        open={tutorialOpen}
+        onClose={() => setTutorialOpen(false)}
+        maxWidth="md"
+        fullWidth
+      >
+        <DialogTitle sx={{ 
+          bgcolor: 'primary.main', 
+          color: 'white',
+          display: 'flex',
+          justifyContent: 'space-between',
+          alignItems: 'center'
+        }}>
+          <Typography variant="h5" component="span" sx={{ color: 'white' }}>
+            How to Use Spam Detection Analytics
+          </Typography>
+          <IconButton
+            onClick={() => setTutorialOpen(false)}
+            sx={{ color: 'white' }}
+          >
+            <CloseIcon />
+          </IconButton>
+        </DialogTitle>
+        
+        <DialogContent sx={{ mt: 3 }}>
+          <Typography variant="h6" gutterBottom sx={{ color: 'primary.main', fontWeight: 'bold' }}>
+            Welcome to the Spam Detection Analytics Dashboard!
+          </Typography>
+          
+          <Typography variant="body1" paragraph>
+            This dashboard provides comprehensive visualizations and analytics for your spam detection model 
+            powered by Linear SVM with 90.50% accuracy.
+          </Typography>
+
+          <Typography variant="h6" gutterBottom sx={{ mt: 3, fontWeight: 'bold' }}>
+            Features:
+          </Typography>
+
+          <Box component="ul" sx={{ pl: 2 }}>
+            <Typography component="li" variant="body1" paragraph>
+              <strong>Drag & Drop:</strong> Simply drag and drop .txt email files to get instant predictions. 
+              The system will automatically classify them as Spam or Ham.
+            </Typography>
+
+            <Typography component="li" variant="body1" paragraph>
+              <strong>Manual Input:</strong> Type or paste email content directly into the text area for classification.
+            </Typography>
+
+            <Typography component="li" variant="body1" paragraph>
+              <strong>Chart Visualization:</strong> All predictions are visualized in interactive charts below. 
+              Use your <strong>mouse wheel to zoom in/out</strong> (50%-200%) and drag to pan across charts.
+            </Typography>
+
+            <Typography component="li" variant="body1" paragraph>
+              <strong>Chart Filters:</strong> Switch between different chart views - Distribution, Performance, 
+              or view all charts at once using the filter buttons.
+            </Typography>
+
+            <Typography component="li" variant="body1" paragraph>
+              <strong>Metrics Panel:</strong> Click the "Metrics Panel" button to view key statistics including 
+              total predictions, spam/ham counts, average confidence, and model accuracy.
+            </Typography>
+
+            <Typography component="li" variant="body1" paragraph>
+              <strong>Export Data:</strong> Download your prediction history and charts as CSV files or images 
+              for reporting and analysis.
+            </Typography>
+
+            <Typography component="li" variant="body1" paragraph>
+              <strong>Prediction History:</strong> All classifications are automatically saved and can be 
+              reviewed in the history table with detailed view options.
+            </Typography>
+            <Typography component="li" variant="body1" paragraph>
+              <strong>Charts Download:</strong> All charts can be downloaded indiviually in .png form 
+            </Typography>
+          </Box>
+
+          <Alert severity="info" sx={{ mt: 3 }}>
+            <Typography variant="body2">
+              <strong>Note:</strong> This system uses a Linear SVM model trained on 89,174 emails 
+              achieving 90.50% accuracy. The model analyzes text patterns using TF-IDF vectorization 
+              with 100 key features to detect spam indicators.
+            </Typography>
+          </Alert>
+        </DialogContent>
+
+        <DialogActions sx={{ p: 3 }}>
+          <Button 
+            onClick={() => setTutorialOpen(false)} 
+            variant="contained" 
+            size="large"
+            fullWidth
+          >
+            Got it!
+          </Button>
+        </DialogActions>
+      </Dialog>
     </Box>
   );
 }
