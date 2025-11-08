@@ -673,17 +673,19 @@ function Charts({ predictions }) {
         {(chartFilter === 'all' || chartFilter === 'distribution') && (
           <Grid item xs={12}>
             <Paper elevation={3} sx={{ p: 3, bgcolor: '#1e3a5f', color: 'white' }}>
-             <CardContent>
-              <Box sx={{ height: 400 }}> {/* KEY: Set height here */}
-                <Bar data={spamWordsData} options={spamWordsOptions} ref={confidenceChartRef} />
-              </Box>
-                <IconButton
-                  onClick={() => exportChartAsImage(confidenceChartRef, 'spam_words_chart')}
-                  sx={{ color: 'white', mt: 1 }}
-                  size="small"
-                >
-                  <DownloadIcon />
-                </IconButton>
+              <CardContent>
+                <Box sx={{ position: 'relative', height: 400 }}>
+                  <Box sx={{ position: 'absolute', top: 0, right: -20, zIndex: 1 }}>
+                    <IconButton
+                      onClick={() => exportChartAsImage(confidenceChartRef, 'spam_words_chart')}
+                      sx={{ color: 'white' }}
+                      size="small"
+                    >
+                      <DownloadIcon />
+                    </IconButton>
+                  </Box>
+                  <Bar data={spamWordsData} options={spamWordsOptions} ref={confidenceChartRef} />
+                </Box>
             </CardContent>
             </Paper>
           </Grid>
@@ -694,16 +696,18 @@ function Charts({ predictions }) {
           <Grid item xs={12}>
             <Paper elevation={3} sx={{ p: 3, bgcolor: '#1e3a5f', color: 'white' }}>
               <CardContent>
-                <Box sx={{ height: 400 }}> {/* KEY: Set height here */}
+                <Box sx={{ position: 'relative', height: 400 }}>
+                  <Box sx={{ position: 'absolute', top: 0, right: -20, zIndex: 1 }}>
+                    <IconButton
+                      onClick={() => exportChartAsImage(timelineChartRef, 'ham_words_chart')}
+                      sx={{ color: 'white' }}
+                      size="small"
+                    >
+                      <DownloadIcon />
+                    </IconButton>
+                  </Box>
                   <Bar data={hamWordsData} options={hamWordsOptions} ref={timelineChartRef} />
                 </Box>
-                <IconButton
-                  onClick={() => exportChartAsImage(timelineChartRef, 'ham_words_chart')}
-                  sx={{ color: 'white', mt: 1 }}
-                  size="small"
-                >
-                  <DownloadIcon />
-                </IconButton>
               </CardContent>
             </Paper>
           </Grid>
