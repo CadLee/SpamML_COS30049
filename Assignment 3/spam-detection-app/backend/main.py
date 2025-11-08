@@ -55,7 +55,7 @@ class EmailInput(BaseModel):
         }
 
 class BatchEmailInput(BaseModel):
-    emails: List[str] = Field(..., min_items=1, max_items=100)
+    emails: List[str] = Field(..., min_items=1, max_items=100) # type: ignore
 
 # Response models
 class PredictionResponse(BaseModel):
@@ -187,7 +187,7 @@ async def get_model_info():
     return spam_detector.get_model_info()
 
 @app.get("/predictions")
-async def get_predictions(limit: int = None):
+async def get_predictions(limit: int = None): # type: ignore
     """
     Get all saved predictions from database
     

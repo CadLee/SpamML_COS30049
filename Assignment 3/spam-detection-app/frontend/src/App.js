@@ -418,16 +418,38 @@ function App() {
                 CoastGuard - Spam Email Detection
               </Typography>
             </Box>
-
-            <Paper sx={{ borderBottom: 1, borderColor: 'divider', mt: 3 }}>
-            <Tabs value={tabValue} onChange={handleTabChange} aria-label="app tabs">
+            
+            <Tabs value={tabValue}
+              onChange={handleTabChange}
+              variant="fullWidth"
+              textColor="inherit"
+              sx={{
+                flexGrow: 1,
+                '& .MuiTab-root': {
+                  color: 'white',
+                  textTransform: 'none',
+                  fontWeight: 600,
+                  letterSpacing: '0.02em',
+                  fontSize: '0.95rem',
+                  minHeight: '64px',
+                },
+                '& .Mui-selected': {
+                  color: theme.palette.ContrastText,
+                  backgroundColor: 'rgba(255, 255, 255, 0.08)',
+                },
+                '& .MuiTabs-indicator': {
+                  backgroundColor: theme.palette.primary.light,
+                  height: '4px',
+                  borderRadius: '4px 4px 0 0',
+                },
+              }}
+            >
               <Tab label="Classify Email" />
               <Tab label="Analytics & Charts" />
               <Tab label="Statistics" />
               <Tab label="Prediction History" />
             </Tabs>
-          </Paper>
-            
+                      
             {/* Action buttons - only show when predictions exist */}
             {predictionHistory.length > 0 && (
               <>
