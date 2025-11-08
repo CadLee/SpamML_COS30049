@@ -24,7 +24,7 @@ class PredictionDatabase:
                 "metadata": {
                     "created_at": datetime.utcnow().isoformat() + "Z",
                     "last_updated": datetime.utcnow().isoformat() + "Z",
-                    "version": "1.0",
+                    "version": "1.0.2",
                     "total_predictions": 0,
                     "total_spam": 0,
                     "total_ham": 0,

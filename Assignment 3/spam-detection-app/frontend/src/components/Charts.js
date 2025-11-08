@@ -34,6 +34,85 @@ ChartJS.register(
   Legend
 );
 
+function getHistogramData(predictions, binType = "hour") {
+  if (!predictions.length) return { labels: [], data: [] };
+  // Bin predictions by hour or day
+  const bins = {};
+  predictions.forEach(p => {
+    const date = new Date(p.timestamp);
+    let label;
+    if (binType === "hour") {
+      label = date.toLocaleDateString() + " " + date.getHours() + ":00";
+    } else {
+      label = date.toLocaleDateString();
+    }
+    bins[label] = (bins[label] || 0) + 1;
+  });
+  // Sort bins chronologically
+  const sortedLabels = Object.keys(bins).sort((a, b) => new Date(a) - new Date(b));
+  const data = sortedLabels.map(label => bins[label]);
+  return { labels: sortedLabels, data };
+}
+
+function getConfidenceDistribution(predictions, binSize = 10) {
+  // Create bins array, e.g., for binSize=10, bins = [0,1,2,...,9] representing 0-10%, 10-20%, etc.
+  const binsCount = Math.ceil(100 / binSize);
+  const bins = new Array(binsCount).fill(0);
+
+  predictions.forEach(p => {
+    if (p.confidence_percentage !== undefined) {
+      // Determine bin index
+      let binIndex = Math.min(Math.floor(p.confidence_percentage / binSize), binsCount - 1);
+      bins[binIndex]++;
+    }
+  });
+
+  // Create labels for each bin
+  const labels = bins.map((_, i) => `${i * binSize}-${(i + 1) * binSize}%`);
+
+  return { labels, data: bins };
+}
+
+function extractTopWords(predictions, type, topN = 10) {
+  // Filter predictions by type (Spam or Ham)
+  const filtered = predictions.filter(p => p.prediction === type);
+  
+  // Common stopwords to exclude
+  const stopwords = new Set([
+    'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for',
+    'of', 'with', 'is', 'was', 'are', 'be', 'been', 'have', 'has', 'had',
+    'do', 'does', 'did', 'will', 'would', 'should', 'could', 'may', 'might',
+    'can', 'this', 'that', 'these', 'those', 'i', 'you', 'he', 'she', 'it',
+    'we', 'they', 'what', 'which', 'who', 'when', 'where', 'why', 'how',
+    'from', 'by', 'about', 'as', 'into', 'through', 'during', 'before',
+    'after', 'above', 'below', 'up', 'down', 'out', 'off', 'over', 'under',
+    'hey', 'hello', 'hi'
+  ]);
+  
+  // Count word frequencies
+  const wordFreq = {};
+  
+  filtered.forEach(pred => {
+    const text = pred.text || pred.email_text || '';
+    const words = text.toLowerCase()
+      .replace(/[^a-z\s]/g, '') // Remove non-alphabetic
+      .split(/\s+/) // Split by whitespace
+      .filter(word => word.length > 3 && !stopwords.has(word)); // Filter stopwords & short words
+    
+    words.forEach(word => {
+      wordFreq[word] = (wordFreq[word] || 0) + 1;
+    });
+  });
+  
+  // Get top N words
+  const sorted = Object.entries(wordFreq)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, topN);
+  
+  return sorted.map(([word, count]) => ({ word, count }));
+}
+
+
 function Charts({ predictions }) {
   const [modelInfo, setModelInfo] = useState(null);
   const [chartFilter, setChartFilter] = useState('all'); // 'all', 'distribution', 'performance'
@@ -122,18 +201,18 @@ function Charts({ predictions }) {
     ]
   };
 
+  const lastTenPredictions = predictions.slice(-10); // Get last 10 predictions
+
   // Confidence Bar Chart
   const confidenceData = {
-    labels: predictions.map((_, i) => `Email ${i + 1}`),
-    datasets: [
-      {
-        label: 'Confidence %',
-        data: predictions.map(p => p.confidence_percentage),
-        backgroundColor: predictions.map(p => p.prediction === 'Spam' ? '#f4433680' : '#4caf5080'),
-        borderColor: predictions.map(p => p.prediction === 'Spam' ? '#f44336' : '#4caf50'),
-        borderWidth: 2
-      }
-    ]
+    labels: lastTenPredictions.map((p, i) => `Email ${predictions.length - 9 + i}`), // Shows correct email numbers
+    datasets: [{
+      label: 'Confidence %',
+      data: lastTenPredictions.map(p => p.confidence_percentage),
+      backgroundColor: lastTenPredictions.map(p => p.prediction === 'Spam' ? '#f4433680' : '#4caf5080'),
+      borderColor: lastTenPredictions.map(p => p.prediction === 'Spam' ? '#f44336' : '#4caf50'),
+      borderWidth: 2
+    }]
   };
 
   // Timeline Chart - Shows predictions over time
@@ -146,7 +225,7 @@ function Charts({ predictions }) {
         borderColor: '#f44336',
         backgroundColor: '#f4433640',
         fill: true,
-        tension: 0.4
+        tension: 0
       },
       {
         label: 'Ham Confidence',
@@ -154,10 +233,24 @@ function Charts({ predictions }) {
         borderColor: '#4caf50',
         backgroundColor: '#4caf5040',
         fill: true,
-        tension: 0.4
+        tension: 0
       }
     ]
   };
+
+  // Histogram Bar Chart Data
+  const histogram = getHistogramData(predictions, 'hour'); // or 'day'
+  const histogramData = {
+    labels: histogram.labels,
+    datasets: [{
+      label: "Predictions per Hour",
+      data: histogram.data,
+      backgroundColor: "#1976d2bb",
+      borderColor: "#1976d2",
+      borderWidth: 1,
+    }]
+  };
+
 
   // Model Performance Metrics (from Assignment 2 - Linear SVM)
   const metricsData = modelInfo ? {
@@ -207,6 +300,159 @@ function Charts({ predictions }) {
       }
     ]
   } : null;
+
+  const { labels: confidenceLabels, data: confidenceChartData } = getConfidenceDistribution(predictions, 10);
+
+  const confidenceDistributionData = {
+    labels: confidenceLabels,
+    datasets: [
+      {
+        label: 'Number of Predictions',
+        data: confidenceChartData,
+        backgroundColor: '#1976d2',
+        borderColor: '#1565c0',
+        borderWidth: 1,
+      },
+    ],
+  };
+
+  const confidenceDistributionOptions = {
+    responsive: true,
+    plugins: {
+      legend: {
+        labels: { color: 'white', font: { weight: 'bold' } }
+      },
+      title: {
+        display: true,
+        text: 'Confidence Distribution',
+        color: 'white',
+        font: { size: 16, weight: 'bold' }
+      }
+    },
+    scales: {
+      x: {
+        ticks: { color: 'white' },
+        title: { display: true, text: 'Confidence Interval', color: 'white' }
+      },
+      y: {
+        beginAtZero: true,
+        ticks: { color: 'white' },
+        title: { display: true, text: 'Prediction Count', color: 'white' }
+      },
+    },
+  };
+
+  // TreeMap Data - Top Words in Spam vs Ham
+  const spamWords = extractTopWords(predictions, 'Spam', 10);
+  const hamWords = extractTopWords(predictions, 'Ham', 10);
+
+  // Spam Words Bar Chart
+  const spamWordsData = {
+    labels: spamWords.map(w => w.word),
+    datasets: [{
+      label: 'Frequency in Spam Emails',
+      data: spamWords.map(w => w.count),
+      backgroundColor: '#f4433680',
+      borderColor: '#f44336',
+      borderWidth: 2,
+      borderRadius: 4,
+    }]
+  };
+
+  const spamWordsOptions = {
+    indexAxis: 'x', // VERTICAL bars
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        labels: { color: 'white', font: { weight: 'bold' } }
+      },
+      title: {
+        display: true,
+        text: 'Top 10 Common Words in Spam Emails',
+        color: 'white',
+        font: { size: 14, weight: 'bold' }
+      }
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+      ticks: { 
+        color: 'white',
+        minStepSize: 1,
+        callback: function(value) {
+          if (Number.isInteger(value)) {
+            return value;
+          }
+        }
+      },
+        title: { display: true, text: 'Frequency', color: 'white' }
+      },
+      x: {
+        ticks: { 
+          color: 'white',
+          font: { size: 12 },
+          maxRotation: 45,
+          minRotation: 45
+        }
+      }
+    }
+  };
+
+  // Ham Words - VERTICAL Bar Chart
+  const hamWordsData = {
+    labels: hamWords.map(w => w.word),
+    datasets: [{
+      label: 'Frequency in Ham Emails',
+      data: hamWords.map(w => w.count),
+      backgroundColor: '#4caf5080',
+      borderColor: '#4caf50',
+      borderWidth: 2,
+      borderRadius: 4,
+    }]
+  };
+
+  const hamWordsOptions = {
+    indexAxis: 'x', // VERTICAL bars
+    responsive: true,
+    maintainAspectRatio: false, // KEY: Allows dynamic height
+    plugins: {
+      legend: {
+        labels: { color: 'white', font: { weight: 'bold' } }
+      },
+      title: {
+        display: true,
+        text: 'Top 10 Common Words in Ham Emails',
+        color: 'white',
+        font: { size: 14, weight: 'bold' }
+      }
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+      ticks: { 
+        color: 'white',
+        minStepSize: 1,
+        callback: function(value) {
+          if (Number.isInteger(value)) {
+            return value;
+          }
+        }
+      },
+        title: { display: true, text: 'Frequency', color: 'white' }
+        
+      },
+      x: {
+        ticks: { 
+          color: 'white',
+          font: { size: 12 },
+          maxRotation: 45,
+          minRotation: 45
+        }
+      }
+    }
+  };
+
 
   if (predictions.length === 0) {
     return null;
@@ -427,79 +673,44 @@ function Charts({ predictions }) {
           </Grid>
         )}
 
-        {/* Timeline Chart */}
+        {/* Spam Bar Chart */}
         {(chartFilter === 'all' || chartFilter === 'distribution') && (
           <Grid item xs={12}>
             <Paper elevation={3} sx={{ p: 3, bgcolor: '#1e3a5f', color: 'white' }}>
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-                <Typography variant="h6" sx={{ color: 'white', fontWeight: 'bold' }}>
-                  Prediction Timeline
-                </Typography>
-                <Button
-                  size="small"
-                  startIcon={<DownloadIcon fontSize="small" />}
-                  onClick={() => exportChartAsImage(timelineChartRef, 'timeline_chart')}
-                  sx={{ color: 'white', borderColor: 'white', fontSize: '0.75rem', py: 0.5, px: 1 }}
-                  variant="outlined"
-                >
-                  Save
-                </Button>
+             <CardContent>
+              <Box sx={{ height: 400 }}> {/* KEY: Set height here */}
+                <Bar data={spamWordsData} options={spamWordsOptions} ref={confidenceChartRef} />
               </Box>
-              <Box sx={{ height: 300, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
-                <Box sx={{ width: '100%', height: '100%' }}>
-                  <Line
-                    ref={timelineChartRef}
-                    data={timelineData}
-                    options={{
-                      ...chartOptions,
-                      maintainAspectRatio: false,
-                      scales: {
-                        y: {
-                          beginAtZero: true,
-                          max: 100,
-                          grid: {
-                            color: 'rgba(255, 255, 255, 0.1)'
-                          },
-                          ticks: {
-                            color: 'white'
-                          },
-                          title: {
-                            display: true,
-                            text: 'Confidence %',
-                            color: 'white',
-                            font: {
-                              weight: 'bold'
-                            }
-                          }
-                        },
-                        x: {
-                          grid: {
-                            color: 'rgba(255, 255, 255, 0.1)'
-                          },
-                          ticks: {
-                            color: 'white'
-                          },
-                          title: {
-                            display: true,
-                            text: 'Time',
-                            color: 'white',
-                            font: {
-                              weight: 'bold'
-                            }
-                          }
-                        }
-                      },
-                      plugins: {
-                        legend: {
-                          labels: {
-                            color: 'white'
-                          }
-                        }
-                      }
-                    }}
-                  />
+              <Button
+                onClick={() => exportChartAsImage(confidenceChartRef, 'spam_words_chart')}
+                sx={{ color: 'white', borderColor: 'white', fontSize: '0.75rem', py: 0.5, px: 1, mt: 1 }}
+                variant="outlined"
+                size="small"
+              >
+                Save Chart
+              </Button>
+            </CardContent>
+            </Paper>
+          </Grid>
+        )}
+
+        {/* Spam Bar Chart */}
+        {(chartFilter === 'all' || chartFilter === 'distribution') && (
+          <Grid item xs={12}>
+            <Paper elevation={3} sx={{ p: 3, bgcolor: '#1e3a5f', color: 'white' }}>
+              <CardContent>
+                <Box sx={{ height: 400 }}> {/* KEY: Set height here */}
+                  <Bar data={hamWordsData} options={hamWordsOptions} ref={timelineChartRef} />
                 </Box>
-              </Box>
+                <Button
+                  onClick={() => exportChartAsImage(timelineChartRef, 'ham_words_chart')}
+                  sx={{ color: 'white', borderColor: 'white', fontSize: '0.75rem', py: 0.5, px: 1, mt: 1 }}
+                  variant="outlined"
+                  size="small"
+                >
+                Save Chart
+                </Button>
+              </CardContent>
             </Paper>
           </Grid>
         )}
