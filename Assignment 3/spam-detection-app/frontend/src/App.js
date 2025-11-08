@@ -4,7 +4,6 @@
  * Manages the entire spam detection application including:
  * - Prediction history state management with JSON persistence
  * - File save/load functionality for long-term data tracking
- * - CSV export for data analysis
  * - Professional flat UI theme with sharp design
  * - Responsive layout for all devices
  * 

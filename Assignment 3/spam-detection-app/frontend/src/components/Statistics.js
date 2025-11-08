@@ -24,20 +24,22 @@ function Statistics({ statistics }) {
   const metadata = statistics.metadata || {};
 
   const StatCard = ({ icon: Icon, title, value, subtitle, color = 'primary' }) => (
-    <Card>
-      <CardContent>
+    <Card sx={{ height: '100%' }}>
+      <CardContent sx={{ height: '100%', display: 'flex', alignItems: 'center' }}>
         <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
           <Box
             sx={{
               bgcolor: `${color}.light`,
               p: 1.5,
               borderRadius: 2,
-              display: 'flex'
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
             }}
           >
-            <Icon sx={{ color: `${color}.main`, fontSize: 32 }} />
+            <Icon sx={{ color: `${color}.main`, fontSize: 32}} />
           </Box>
-          <Box>
+          <Box sx={{ display: 'flex', flexDirection: 'column', justifyContent: 'center', flex: 1 }}>
             <Typography color="text.secondary" variant="body2" gutterBottom>
               {title}
             </Typography>
