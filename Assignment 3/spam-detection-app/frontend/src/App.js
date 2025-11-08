@@ -13,11 +13,11 @@
  * @course COS30049 - Computing Technology Innovation Project
  */
 
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   AppBar, Toolbar, Typography, Container, Box, ThemeProvider, createTheme, 
   CssBaseline, IconButton, Tooltip, Button, Dialog, DialogTitle, 
-  DialogContent, DialogContentText, DialogActions, Divider
+  DialogContent, DialogContentText, DialogActions, Divider, Paper, Tabs, Tab
 } from '@mui/material';
 import { 
   Download as DownloadIcon,
@@ -27,6 +27,9 @@ import {
 } from '@mui/icons-material';
 import EmailClassifier from './components/EmailClassifier';
 import Charts from './components/Charts';
+import Statistics from './components/Statistics';
+import PredictionHistory from './components/PredictionHistory';
+import axios from 'axios';
 
 /**
  * Professional Enterprise Theme Configuration
@@ -145,13 +148,56 @@ const theme = createTheme({
   },
 });
 
+function TabPanel(props) {
+  const { children, value, index, ...other } = props;
+  return (
+    <div
+      role="tabpanel"
+      hidden={value !== index}
+      {...other}
+    >
+      {value === index && <Box sx={{ pt: 3 }}>{children}</Box>}
+    </div>
+  );
+}
+
 function App() {
   // State: Stores all prediction history
   const [predictionHistory, setPredictionHistory] = useState([]);
+
+  // State: Manages current tab (0: Classifier, 1: Charts, 2: Stats, 3: History)
+  const [tabValue, setTabValue] = useState(0);
+
+  // State: Stores statistics data
+  const [statistics, setStatistics] = useState(null);
   
   // State: Controls confirmation dialog for clearing history
   const [openClearDialog, setOpenClearDialog] = useState(false);
   
+  // Load predictions on app startup
+  useEffect(() => {
+    loadPredictionHistory();
+    loadStatistics();
+  }, []);
+
+  const loadPredictionHistory = async () => {
+    try {
+      const response = await axios.get('http://localhost:8000/predictions');
+      setPredictionHistory(response.data.predictions || []);
+    } catch (err) {
+      console.error('Failed to load prediction history:', err);
+    }
+  };
+
+  const loadStatistics = async () => {
+    try {
+      const response = await axios.get('http://localhost:8000/statistics');
+      setStatistics(response.data);
+    } catch (err) {
+      console.error('Failed to load statistics:', err);
+    }
+  };
+
   // Ref: Hidden file input for loading JSON files
   const fileInputRef = useRef(null);
 
@@ -171,6 +217,24 @@ function App() {
    */
   const addPrediction = (prediction) => {
     setPredictionHistory(prev => [...prev, prediction]);
+    loadStatistics(); // Refresh statistics
+  };
+
+  const handleClearHistory = async () => {
+    if (window.confirm('Are you sure? This action cannot be undone!')) {
+      try {
+        await axios.delete('http://localhost:8000/predictions');
+        setPredictionHistory([]);
+        setStatistics(null);
+        alert('All predictions cleared successfully');
+      } catch (err) {
+        alert('Failed to clear predictions: ' + err.message);
+      }
+    }
+  };
+
+  const handleTabChange = (event, newValue) => {
+    setTabValue(newValue);
   };
 
   /**
@@ -286,18 +350,6 @@ function App() {
   };
 
   /**
-   * Clears all prediction history from state
-   * Does not delete saved JSON files (those remain as backups)
-   * 
-   * Use case: Starting fresh analysis session
-   */
-  const handleClearHistory = () => {
-    setPredictionHistory([]);
-    setOpenClearDialog(false);
-    console.log('✓ Cleared all prediction history from memory');
-  };
-
-  /**
    * Exports all predictions to CSV file for spreadsheet analysis
    * Format: Timestamp, Prediction, Confidence %, Email Text (truncated)
    * 
@@ -363,9 +415,18 @@ function App() {
                 mr: 2 
               }} />
               <Typography variant="h6" sx={{ fontWeight: 700, letterSpacing: '0.02em' }}>
-                EMAIL SPAM DETECTION SYSTEM
+                CoastGuard - Spam Email Detection
               </Typography>
             </Box>
+
+            <Paper sx={{ borderBottom: 1, borderColor: 'divider', mt: 3 }}>
+            <Tabs value={tabValue} onChange={handleTabChange} aria-label="app tabs">
+              <Tab label="Classify Email" />
+              <Tab label="Analytics & Charts" />
+              <Tab label="Statistics" />
+              <Tab label="Prediction History" />
+            </Tabs>
+          </Paper>
             
             {/* Action buttons - only show when predictions exist */}
             {predictionHistory.length > 0 && (
@@ -448,7 +509,7 @@ function App() {
           {/* Title Section */}
           <Box sx={{ mb: 6 }}>
             <Typography variant="h3" component="h1" gutterBottom sx={{ mb: 2 }}>
-              Spam or Ham Classification
+              CoastGuard Spam Detection System
             </Typography>
             <Typography variant="h6" color="text.secondary" sx={{ mb: 3, fontWeight: 400 }}>
               Enterprise-grade AI-powered email classification using Linear Support Vector Machine
@@ -481,32 +542,41 @@ function App() {
             </Box>
           </Box>
 
-          {/* Email Classifier Component */}
-          <EmailClassifier onPrediction={addPrediction} />
-          
-          {/* Charts Component - Only show if predictions exist */}
-          {predictionHistory.length > 0 && (
-            <Charts predictions={predictionHistory} />
-          )}
+          <TabPanel value={tabValue} index={0}>
+            <EmailClassifier onPrediction={addPrediction} />
+          </TabPanel>
 
-          {/* Empty State - Show when no predictions */}
-          {predictionHistory.length === 0 && (
-            <Box sx={{ 
-              mt: 8, 
-              p: 6, 
-              textAlign: 'center', 
-              bgcolor: 'background.paper',
-              border: '2px dashed',
-              borderColor: 'divider',
-            }}>
-              <Typography variant="h5" color="text.secondary" gutterBottom sx={{ fontWeight: 600 }}>
-                No Predictions Yet
-              </Typography>
-              <Typography variant="body1" color="text.secondary" sx={{ mt: 1 }}>
-                Enter an email above or load a JSON file to see analytics and visualizations
-              </Typography>
-            </Box>
-          )}
+          <TabPanel value={tabValue} index={1}>
+            {predictionHistory.length > 0 ? (
+              <Charts predictions={predictionHistory} />
+            ) : (
+              <Box sx={{ textAlign: 'center', py: 4 }}>
+                <Typography variant="body1" color="text.secondary">
+                  No predictions yet. Classify some emails to see charts and analytics.
+                </Typography>
+              </Box>
+            )}
+          </TabPanel>
+
+          <TabPanel value={tabValue} index={2}>
+            {statistics ? (
+              <Statistics statistics={statistics} />
+            ) : (
+              <Box sx={{ textAlign: 'center', py: 4 }}>
+                <Typography variant="body1" color="text.secondary">
+                  No statistics available yet.
+                </Typography>
+              </Box>
+            )}
+          </TabPanel>
+
+          <TabPanel value={tabValue} index={3}>
+            <PredictionHistory 
+              predictions={predictionHistory} 
+              onClear={handleClearHistory}
+            />
+          </TabPanel>
+
         </Container>
 
         {/* Professional Footer */}
@@ -536,7 +606,7 @@ function App() {
                   Damian Moisidis | Mufid Kadli | Pratham Kumar
                 </Typography>
                 <Typography variant="caption" sx={{ opacity: 0.7 }}>
-                  © 2025 Coast Guard - Group 1
+                  ©2025 Session 24 - Group 1
                 </Typography>
               </Box>
             </Box>
@@ -554,7 +624,7 @@ function App() {
           <DialogContentText>
             Are you sure you want to clear all {predictionHistory.length} predictions from memory?
             <br /><br />
-            <strong>Note:</strong> This will not delete any saved JSON files. This action cannot be undone.
+            <strong>Note:</strong> This will DELETE any and ALL data from the local JSON file. This action cannot be undone.
           </DialogContentText>
         </DialogContent>
         <DialogActions sx={{ p: 2 }}>
