@@ -238,168 +238,6 @@ function App() {
     setTabValue(newValue);
   };
 
-  /**
-   * Saves all prediction history to downloadable JSON file
-   * Creates formatted JSON with proper indentation for readability
-   * Filename includes current date for version tracking
-   * 
-   * Use case: Daily/weekly data archiving for long-term analysis
-   * 
-   * @param {Array} data - Array of prediction objects (defaults to current state)
-   */
-  const saveToJSON = (data = predictionHistory) => {
-    if (data.length === 0) {
-      alert('No predictions to save!');
-      return;
-    }
-
-    try {
-      // Create JSON string with 2-space indentation for readability
-      const jsonString = JSON.stringify(data, null, 2);
-      
-      // Create blob from JSON string
-      const blob = new Blob([jsonString], { type: 'application/json' });
-      
-      // Create download link with date-stamped filename
-      const url = URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `spam_predictions_${new Date().toISOString().slice(0,10)}.json`;
-      
-      // Trigger download
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      
-      // Clean up object URL to free memory
-      URL.revokeObjectURL(url);
-      
-      console.log(`✓ Saved ${data.length} predictions to JSON file`);
-    } catch (error) {
-      console.error('Error saving to JSON:', error);
-      alert('Failed to save JSON file. Please try again.');
-    }
-  };
-
-  /**
-   * Loads predictions from JSON file and adds to existing data
-   * Accumulates data over time instead of replacing current predictions
-   * This allows continuous data collection across multiple sessions
-   * 
-   * Use case: Loading previous week's data to continue analysis
-   * 
-   * @param {Event} event - File input change event
-   */
-  const loadFromJSON = (event) => {
-    const file = event.target.files[0];
-    
-    if (!file) return;
-
-    // Validate file type
-    if (!file.name.endsWith('.json')) {
-      alert('Please select a valid JSON file');
-      return;
-    }
-
-    const reader = new FileReader();
-    
-    // Handle successful file read
-    reader.onload = (e) => {
-      try {
-        // Parse JSON content
-        const data = JSON.parse(e.target.result);
-        
-        // Validate data structure
-        if (!Array.isArray(data)) {
-          throw new Error('Invalid format: Expected array of predictions');
-        }
-        
-        // Validate each prediction object has required fields
-        const isValid = data.every(item => 
-          item.hasOwnProperty('prediction') && 
-          item.hasOwnProperty('confidence_percentage')
-        );
-        
-        if (!isValid) {
-          throw new Error('Invalid data structure in JSON file');
-        }
-        
-        // Add loaded data to existing predictions (accumulate, don't replace)
-        setPredictionHistory(prev => {
-          const combined = [...prev, ...data];
-          console.log(`✓ Added ${data.length} predictions. Total: ${combined.length}`);
-          alert(`Successfully added ${data.length} predictions!\nTotal predictions: ${combined.length}`);
-          return combined;
-        });
-        
-      } catch (error) {
-        console.error('Error loading JSON:', error);
-        alert(`Failed to load JSON file.\n\nError: ${error.message}\n\nPlease check the file format.`);
-      }
-    };
-    
-    // Handle file read errors
-    reader.onerror = () => {
-      alert('Failed to read file. Please try again.');
-    };
-    
-    // Read file as text
-    reader.readAsText(file);
-    
-    // Reset input to allow loading same file again
-    event.target.value = '';
-  };
-
-  /**
-   * Exports all predictions to CSV file for spreadsheet analysis
-   * Format: Timestamp, Prediction, Confidence %, Email Text (truncated)
-   * 
-   * Use case: Importing data into Excel/Google Sheets for analysis
-   */
-  const exportCSV = () => {
-    if (predictionHistory.length === 0) {
-      alert('No predictions to export!');
-      return;
-    }
-
-    try {
-      // Create CSV headers
-      const headers = ['Timestamp', 'Prediction', 'Confidence %', 'Raw Score', 'Label', 'Email Text'];
-      
-      // Create CSV rows from prediction history
-      const csvContent = [
-        headers.join(','),
-        ...predictionHistory.map(p => [
-          new Date(p.timestamp).toLocaleString(),
-          p.prediction,
-          p.confidence_percentage.toFixed(2),
-          p.raw_score?.toFixed(4) || 'N/A',
-          p.label,
-          `"${(p.text || '').replace(/"/g, '""').substring(0, 100)}..."` // Escape quotes and truncate
-        ].join(','))
-      ].join('\n');
-
-      // Create blob and download link
-      const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-      const link = document.createElement('a');
-      const url = URL.createObjectURL(blob);
-      
-      link.href = url;
-      link.download = `spam_predictions_${new Date().toISOString().slice(0,10)}.csv`;
-      
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      
-      URL.revokeObjectURL(url);
-      
-      console.log(`✓ Exported ${predictionHistory.length} predictions to CSV`);
-    } catch (error) {
-      console.error('Error exporting CSV:', error);
-      alert('Failed to export CSV file. Please try again.');
-    }
-  };
-
   return (
     <ThemeProvider theme={theme}>
       <CssBaseline />
@@ -453,27 +291,7 @@ function App() {
                       
             {/* Action buttons - only show when predictions exist */}
             {predictionHistory.length > 0 && (
-              <>
-                <Tooltip title="Save Predictions to JSON File">
-                  <IconButton 
-                    color="inherit" 
-                    onClick={() => saveToJSON()}
-                    sx={{ ml: 1 }}
-                  >
-                    <SaveIcon />
-                  </IconButton>
-                </Tooltip>
-                
-                <Tooltip title="Export to CSV">
-                  <IconButton 
-                    color="inherit" 
-                    onClick={exportCSV}
-                    sx={{ ml: 1 }}
-                  >
-                    <DownloadIcon />
-                  </IconButton>
-                </Tooltip>
-                
+              <>                
                 <Tooltip title="Clear All History">
                   <IconButton 
                     color="inherit" 
@@ -497,27 +315,7 @@ function App() {
                 </Box>
               </>
             )}
-            
-            {/* Load JSON button - always visible */}
-            <Tooltip title="Load Predictions from JSON File">
-              <IconButton 
-                color="inherit" 
-                onClick={() => fileInputRef.current?.click()}
-                sx={{ ml: 2 }}
-              >
-                <UploadIcon />
-              </IconButton>
-            </Tooltip>
-            
-            {/* Hidden file input */}
-            <input
-              type="file"
-              ref={fileInputRef}
-              accept=".json"
-              onChange={loadFromJSON}
-              style={{ display: 'none' }}
-            />
-            
+         
             <Divider orientation="vertical" flexItem sx={{ mx: 2, bgcolor: 'rgba(255,255,255,0.3)' }} />
             
             <Typography variant="body2" sx={{ opacity: 0.9, fontWeight: 500 }}>
