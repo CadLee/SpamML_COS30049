@@ -558,7 +558,7 @@ function App() {
               </Box>
               <Divider orientation="vertical" flexItem sx={{ bgcolor: 'rgba(255,255,255,0.3)' }} />
               <Box>
-                <Typography variant="caption" sx={{ opacity: 0.8, display: 'block', mb: 0.5}}>
+                <Typography variant="caption" sx={{ opacity: 0.8, display: 'block', mb: 0.5 }}>
                   ALGORITHM
                 </Typography>
                 <Typography variant="body2" sx={{ fontWeight: 600 }}>
