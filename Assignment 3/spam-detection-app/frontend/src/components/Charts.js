@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
-  Paper, Typography, Grid, Box, Card, CardContent, Button, ButtonGroup
+  Paper, Typography, Grid, Box, Card, CardContent, Button, ButtonGroup, IconButton
 } from '@mui/material';
 import {
   Download as DownloadIcon,
@@ -579,15 +579,13 @@ function Charts({ predictions }) {
                 <Typography variant="h6" sx={{ color: 'white', fontWeight: 'bold' }}>
                   Spam vs Ham Distribution
                 </Typography>
-                <Button
-                  size="small"
-                  startIcon={<DownloadIcon fontSize="small" />}
+                <IconButton
                   onClick={() => exportChartAsImage(pieChartRef, 'distribution_chart')}
-                  sx={{ color: 'white', borderColor: 'white', fontSize: '0.75rem', py: 0.5, px: 1 }}
-                  variant="outlined"
+                  sx={{ color: 'white' }}
+                  size="small"
                 >
-                  Save
-                </Button>
+                  <DownloadIcon />
+                </IconButton>
               </Box>
               <Box sx={{ height: 300 }}>
                 <Pie ref={pieChartRef} data={pieData} options={chartOptions} />
@@ -604,15 +602,13 @@ function Charts({ predictions }) {
                 <Typography variant="h6" sx={{ color: 'white', fontWeight: 'bold' }}>
                   Classification Confidence Levels
                 </Typography>
-                <Button
-                  size="small"
-                  startIcon={<DownloadIcon fontSize="small" />}
+                <IconButton
                   onClick={() => exportChartAsImage(confidenceChartRef, 'confidence_chart')}
-                  sx={{ color: 'white', borderColor: 'white', fontSize: '0.75rem', py: 0.5, px: 1 }}
-                  variant="outlined"
+                  sx={{ color: 'white' }}
+                  size="small"
                 >
-                  Save
-                </Button>
+                  <DownloadIcon />
+                </IconButton>
               </Box>
               <Box sx={{ height: 300, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                 <Box sx={{ width: '100%', height: '100%' }}>
@@ -681,14 +677,13 @@ function Charts({ predictions }) {
               <Box sx={{ height: 400 }}> {/* KEY: Set height here */}
                 <Bar data={spamWordsData} options={spamWordsOptions} ref={confidenceChartRef} />
               </Box>
-              <Button
-                onClick={() => exportChartAsImage(confidenceChartRef, 'spam_words_chart')}
-                sx={{ color: 'white', borderColor: 'white', fontSize: '0.75rem', py: 0.5, px: 1, mt: 1 }}
-                variant="outlined"
-                size="small"
-              >
-                Save Chart
-              </Button>
+                <IconButton
+                  onClick={() => exportChartAsImage(confidenceChartRef, 'spam_words_chart')}
+                  sx={{ color: 'white', mt: 1 }}
+                  size="small"
+                >
+                  <DownloadIcon />
+                </IconButton>
             </CardContent>
             </Paper>
           </Grid>
@@ -702,14 +697,13 @@ function Charts({ predictions }) {
                 <Box sx={{ height: 400 }}> {/* KEY: Set height here */}
                   <Bar data={hamWordsData} options={hamWordsOptions} ref={timelineChartRef} />
                 </Box>
-                <Button
+                <IconButton
                   onClick={() => exportChartAsImage(timelineChartRef, 'ham_words_chart')}
-                  sx={{ color: 'white', borderColor: 'white', fontSize: '0.75rem', py: 0.5, px: 1, mt: 1 }}
-                  variant="outlined"
+                  sx={{ color: 'white', mt: 1 }}
                   size="small"
                 >
-                Save Chart
-                </Button>
+                  <DownloadIcon />
+                </IconButton>
               </CardContent>
             </Paper>
           </Grid>
@@ -728,15 +722,13 @@ function Charts({ predictions }) {
                     Accuracy: {modelInfo.accuracy}% | Trained on 89,174 emails
                   </Typography>
                 </Box>
-                <Button
-                  size="small"
-                  startIcon={<DownloadIcon fontSize="small" />}
+                <IconButton
                   onClick={() => exportChartAsImage(performanceChartRef, 'performance_metrics')}
-                  sx={{ color: 'white', borderColor: 'white', fontSize: '0.75rem', py: 0.5, px: 1 }}
-                  variant="outlined"
+                  sx={{ color: 'white' }}
+                  size="small"
                 >
-                  Save
-                </Button>
+                  <DownloadIcon />
+                </IconButton>
               </Box>
               <Box sx={{ height: 300 }}>
                 <Bar
@@ -800,15 +792,13 @@ function Charts({ predictions }) {
                     Training results from Assignment 2
                   </Typography>
                 </Box>
-                <Button
-                  size="small"
-                  startIcon={<DownloadIcon fontSize="small" />}
+                <IconButton
                   onClick={() => exportChartAsImage(confusionMatrixRef, 'confusion_matrix')}
-                  sx={{ color: 'white', borderColor: 'white', fontSize: '0.75rem', py: 0.5, px: 1 }}
-                  variant="outlined"
+                  sx={{ color: 'white' }}
+                  size="small"
                 >
-                  Save
-                </Button>
+                  <DownloadIcon />
+                </IconButton>
               </Box>
               <Box sx={{ height: 300 }}>
                 <Bar
