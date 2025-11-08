@@ -1,10 +1,15 @@
 import React, { useState, useEffect, useRef } from 'react';
 import {
-  Paper, Typography, Grid, Box, Card, CardContent, Button, ButtonGroup, IconButton
+  Paper, Typography, Grid, Box, Card, CardContent, Button, ButtonGroup, IconButton,
+  Drawer, Divider, Slider, Tooltip
 } from '@mui/material';
 import {
   Download as DownloadIcon,
-  Assessment as AssessmentIcon
+  Assessment as AssessmentIcon,
+  ZoomIn as ZoomInIcon,
+  ZoomOut as ZoomOutIcon,
+  RestartAlt as RestartAltIcon,
+  Close as CloseIcon
 } from '@mui/icons-material';
 import { Pie, Bar, Line, Chart } from 'react-chartjs-2';
 import {
@@ -16,13 +21,14 @@ import {
   LineElement,
   ArcElement,
   Title,
-  Tooltip,
+  Tooltip as ChartTooltip,
   Legend
 } from 'chart.js';
+import zoomPlugin from 'chartjs-plugin-zoom';
 
 import axios from 'axios';
 
-// Register Chart.js components
+// Register Chart.js components including zoom plugin
 ChartJS.register(
   CategoryScale,
   LinearScale,
@@ -31,13 +37,13 @@ ChartJS.register(
   LineElement,
   ArcElement,
   Title,
-  Tooltip,
+  ChartTooltip,
   Legend,
+  zoomPlugin
 );
 
 function getHistogramData(predictions, binType = "hour") {
   if (!predictions.length) return { labels: [], data: [] };
-  // Bin predictions by hour or day
   const bins = {};
   predictions.forEach(p => {
     const date = new Date(p.timestamp);
@@ -49,36 +55,30 @@ function getHistogramData(predictions, binType = "hour") {
     }
     bins[label] = (bins[label] || 0) + 1;
   });
-  // Sort bins chronologically
   const sortedLabels = Object.keys(bins).sort((a, b) => new Date(a) - new Date(b));
   const data = sortedLabels.map(label => bins[label]);
   return { labels: sortedLabels, data };
 }
 
 function getConfidenceDistribution(predictions, binSize = 10) {
-  // Create bins array, e.g., for binSize=10, bins = [0,1,2,...,9] representing 0-10%, 10-20%, etc.
   const binsCount = Math.ceil(100 / binSize);
   const bins = new Array(binsCount).fill(0);
 
   predictions.forEach(p => {
     if (p.confidence_percentage !== undefined) {
-      // Determine bin index
       let binIndex = Math.min(Math.floor(p.confidence_percentage / binSize), binsCount - 1);
       bins[binIndex]++;
     }
   });
 
-  // Create labels for each bin
   const labels = bins.map((_, i) => `${i * binSize}-${(i + 1) * binSize}%`);
 
   return { labels, data: bins };
 }
 
 function extractTopWords(predictions, type, topN = 10) {
-  // Filter predictions by type (Spam or Ham)
   const filtered = predictions.filter(p => p.prediction === type);
   
-  // Common stopwords to exclude
   const stopwords = new Set([
     'the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for',
     'of', 'with', 'is', 'was', 'are', 'be', 'been', 'have', 'has', 'had',
@@ -90,22 +90,20 @@ function extractTopWords(predictions, type, topN = 10) {
     'hey', 'hello', 'hi'
   ]);
   
-  // Count word frequencies
   const wordFreq = {};
   
   filtered.forEach(pred => {
     const text = pred.text || pred.email_text || '';
     const words = text.toLowerCase()
-      .replace(/[^a-z\s]/g, '') // Remove non-alphabetic
-      .split(/\s+/) // Split by whitespace
-      .filter(word => word.length > 3 && !stopwords.has(word)); // Filter stopwords & short words
+      .replace(/[^a-z\s]/g, '')
+      .split(/\s+/)
+      .filter(word => word.length > 3 && !stopwords.has(word));
     
     words.forEach(word => {
       wordFreq[word] = (wordFreq[word] || 0) + 1;
     });
   });
   
-  // Get top N words
   const sorted = Object.entries(wordFreq)
     .sort((a, b) => b[1] - a[1])
     .slice(0, topN);
@@ -116,7 +114,12 @@ function extractTopWords(predictions, type, topN = 10) {
 
 function Charts({ predictions }) {
   const [modelInfo, setModelInfo] = useState(null);
-  const [chartFilter, setChartFilter] = useState('all'); // 'all', 'distribution', 'performance'
+  const [chartFilter, setChartFilter] = useState('all');
+  
+  //  Zoom and Metrics Panel states
+  const [zoomLevel, setZoomLevel] = useState(100);
+  const [metricsOpen, setMetricsOpen] = useState(false);
+  
   const pieChartRef = useRef(null);
   const confidenceChartRef = useRef(null);
   const spamWordChartRef = useRef(null);
@@ -126,11 +129,53 @@ function Charts({ predictions }) {
   const confusionMatrixRef = useRef(null);
 
   useEffect(() => {
-    // Fetch model information from backend
     axios.get('http://localhost:8000/model-info')
       .then(response => setModelInfo(response.data))
       .catch(err => console.error('Failed to fetch model info:', err));
   }, []);
+
+  //  Apply zoom to all charts
+  
+useEffect(() => {
+  const chartRefs = [
+    pieChartRef, confidenceChartRef, spamWordChartRef, hamWordChartRef,
+    timelineChartRef, performanceChartRef, confusionMatrixRef
+  ];
+
+  chartRefs.forEach(ref => {
+    if (ref.current) {
+      const chart = ref.current;
+      if (chart.resetZoom) {
+        chart.resetZoom();
+      }
+      if (chart.zoom && zoomLevel !== 100) {
+        chart.zoom(zoomLevel / 100);
+      }
+    }
+  });
+}, [zoomLevel]);
+
+  //  Zoom control functions
+  const handleZoomIn = () => {
+    setZoomLevel(prev => Math.min(prev + 10, 150));
+  };
+
+  const handleZoomOut = () => {
+    setZoomLevel(prev => Math.max(prev - 10, 50));
+  };
+
+  const handleResetZoom = () => {
+    setZoomLevel(100);
+    const chartRefs = [
+      pieChartRef, confidenceChartRef, spamWordChartRef, hamWordChartRef,
+      timelineChartRef, performanceChartRef, confusionMatrixRef
+    ];
+    chartRefs.forEach(ref => {
+      if (ref.current && ref.current.resetZoom) {
+        ref.current.resetZoom();
+      }
+    });
+  };
 
   // Calculate statistics
   const spamCount = predictions.filter(p => p.prediction === 'Spam').length;
@@ -172,7 +217,7 @@ function Charts({ predictions }) {
     }
   };
 
-  // Chart options
+  //  Chart options with zoom plugin enabled
   const chartOptions = {
     responsive: true,
     maintainAspectRatio: true,
@@ -185,6 +230,26 @@ function Charts({ predictions }) {
             size: 12,
             weight: 'bold'
           }
+        }
+      },
+      zoom: {
+        zoom: {
+          wheel: {
+            enabled: true,
+            speed: 0.1
+          },
+          pinch: {
+            enabled: true
+          },
+          mode: 'xy'
+        },
+        pan: {
+          enabled: true,
+          mode: 'xy'
+        },
+        limits: {
+          x: { min: 0.5, max: 1.5 },
+          y: { min: 0.5, max: 1.5 }
         }
       }
     }
@@ -204,11 +269,11 @@ function Charts({ predictions }) {
     ]
   };
 
-  const lastTenPredictions = predictions.slice(-10); // Get last 10 predictions
+  const lastTenPredictions = predictions.slice(-10);
 
   // Confidence Bar Chart
   const confidenceData = {
-    labels: lastTenPredictions.map((p, i) => `Email ${predictions.length - 9 + i}`), // Shows correct email numbers
+    labels: lastTenPredictions.map((p, i) => `Email ${predictions.length - 9 + i}`),
     datasets: [{
       label: 'Confidence %',
       data: lastTenPredictions.map(p => p.confidence_percentage),
@@ -218,7 +283,7 @@ function Charts({ predictions }) {
     }]
   };
 
-  // Timeline Chart - Shows predictions over time
+  // Timeline Chart
   const timelineData = {
     labels: predictions.map(p => new Date(p.timestamp).toLocaleTimeString()),
     datasets: [
@@ -242,7 +307,7 @@ function Charts({ predictions }) {
   };
 
   // Histogram Bar Chart Data
-  const histogram = getHistogramData(predictions, 'hour'); // or 'day'
+  const histogram = getHistogramData(predictions, 'hour');
   const histogramData = {
     labels: histogram.labels,
     datasets: [{
@@ -254,8 +319,7 @@ function Charts({ predictions }) {
     }]
   };
 
-
-  // Model Performance Metrics (from Assignment 2 - Linear SVM)
+  // Model Performance Metrics
   const metricsData = modelInfo ? {
     labels: ['Precision (Ham)', 'Precision (Spam)', 'Recall (Ham)', 'Recall (Spam)', 'F1 (Ham)', 'F1 (Spam)'],
     datasets: [
@@ -283,20 +347,20 @@ function Charts({ predictions }) {
     ]
   } : null;
 
-  // Confusion Matrix Visualization (from model training)
+  // Confusion Matrix
   const confusionMatrixData = modelInfo ? {
     labels: ['Ham (Predicted)', 'Spam (Predicted)'],
     datasets: [
       {
         label: 'Ham (Actual)',
-        data: [30374, 4717], // True Negatives, False Positives from Linear SVM
+        data: [30374, 4717],
         backgroundColor: '#4caf50',
         borderWidth: 2,
         borderColor: '#fff'
       },
       {
         label: 'Spam (Actual)',
-        data: [2055, 34166], // False Negatives, True Positives from Linear SVM
+        data: [2055, 34166],
         backgroundColor: '#f44336',
         borderWidth: 2,
         borderColor: '#fff'
@@ -330,7 +394,8 @@ function Charts({ predictions }) {
         text: 'Confidence Distribution',
         color: 'white',
         font: { size: 16, weight: 'bold' }
-      }
+      },
+      zoom: chartOptions.plugins.zoom
     },
     scales: {
       x: {
@@ -345,11 +410,10 @@ function Charts({ predictions }) {
     },
   };
 
-  // TreeMap Data - Top Words in Spam vs Ham
+  // Word frequency charts
   const spamWords = extractTopWords(predictions, 'Spam', 10);
   const hamWords = extractTopWords(predictions, 'Ham', 10);
 
-  // Spam Words Bar Chart
   const spamWordsData = {
     labels: spamWords.map(w => w.word),
     datasets: [{
@@ -363,7 +427,7 @@ function Charts({ predictions }) {
   };
 
   const spamWordsOptions = {
-    indexAxis: 'x', // VERTICAL bars
+    indexAxis: 'x',
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
@@ -375,20 +439,21 @@ function Charts({ predictions }) {
         text: 'Top 10 Common Words in Spam Emails',
         color: 'white',
         font: { size: 14, weight: 'bold' }
-      }
+      },
+      zoom: chartOptions.plugins.zoom
     },
     scales: {
       y: {
         beginAtZero: true,
-      ticks: { 
-        color: 'white',
-        minStepSize: 1,
-        callback: function(value) {
-          if (Number.isInteger(value)) {
-            return value;
+        ticks: { 
+          color: 'white',
+          minStepSize: 1,
+          callback: function(value) {
+            if (Number.isInteger(value)) {
+              return value;
+            }
           }
-        }
-      },
+        },
         title: { display: true, text: 'Frequency', color: 'white' }
       },
       x: {
@@ -402,7 +467,6 @@ function Charts({ predictions }) {
     }
   };
 
-  // Ham Words - VERTICAL Bar Chart
   const hamWordsData = {
     labels: hamWords.map(w => w.word),
     datasets: [{
@@ -416,9 +480,9 @@ function Charts({ predictions }) {
   };
 
   const hamWordsOptions = {
-    indexAxis: 'x', // VERTICAL bars
+    indexAxis: 'x',
     responsive: true,
-    maintainAspectRatio: false, // KEY: Allows dynamic height
+    maintainAspectRatio: false,
     plugins: {
       legend: {
         labels: { color: 'white', font: { weight: 'bold' } }
@@ -428,22 +492,22 @@ function Charts({ predictions }) {
         text: 'Top 10 Common Words in Ham Emails',
         color: 'white',
         font: { size: 14, weight: 'bold' }
-      }
+      },
+      zoom: chartOptions.plugins.zoom
     },
     scales: {
       y: {
         beginAtZero: true,
-      ticks: { 
-        color: 'white',
-        minStepSize: 1,
-        callback: function(value) {
-          if (Number.isInteger(value)) {
-            return value;
+        ticks: { 
+          color: 'white',
+          minStepSize: 1,
+          callback: function(value) {
+            if (Number.isInteger(value)) {
+              return value;
+            }
           }
-        }
-      },
+        },
         title: { display: true, text: 'Frequency', color: 'white' }
-        
       },
       x: {
         ticks: { 
@@ -457,34 +521,34 @@ function Charts({ predictions }) {
   };
 
   const confidenceLineData = {
-  labels: lastTenPredictions.map((p, i) => `Email ${predictions.length - 9 + i}`),
-  datasets: [
-    {
-      label: 'Spam Confidence',
-      data: lastTenPredictions.map(p => p.prediction === 'Spam' ? p.confidence_percentage : null),
-      borderColor: '#f44336',
-      backgroundColor: '#f4433640',
-      fill: true,
-      tension: 0.3,
-      pointRadius: 6,
-      pointBackgroundColor: '#f44336',
-      pointBorderColor: '#fff',
-      pointBorderWidth: 2,
-    },
-    {
-      label: 'Ham Confidence',
-      data: lastTenPredictions.map(p => p.prediction === 'Ham' ? p.confidence_percentage : null),
-      borderColor: '#4caf50',
-      backgroundColor: '#4caf5040',
-      fill: true,
-      tension: 0.3,
-      pointRadius: 6,
-      pointBackgroundColor: '#4caf50',
-      pointBorderColor: '#fff',
-      pointBorderWidth: 2,
-    }
-  ]
-};
+    labels: lastTenPredictions.map((p, i) => `Email ${predictions.length - 9 + i}`),
+    datasets: [
+      {
+        label: 'Spam Confidence',
+        data: lastTenPredictions.map(p => p.prediction === 'Spam' ? p.confidence_percentage : null),
+        borderColor: '#f44336',
+        backgroundColor: '#f4433640',
+        fill: true,
+        tension: 0.3,
+        pointRadius: 6,
+        pointBackgroundColor: '#f44336',
+        pointBorderColor: '#fff',
+        pointBorderWidth: 2,
+      },
+      {
+        label: 'Ham Confidence',
+        data: lastTenPredictions.map(p => p.prediction === 'Ham' ? p.confidence_percentage : null),
+        borderColor: '#4caf50',
+        backgroundColor: '#4caf5040',
+        fill: true,
+        tension: 0.3,
+        pointRadius: 6,
+        pointBackgroundColor: '#4caf50',
+        pointBorderColor: '#fff',
+        pointBorderWidth: 2,
+      }
+    ]
+  };
 
   const confidenceLineOptions = {
     responsive: true,
@@ -498,7 +562,8 @@ function Charts({ predictions }) {
         text: 'Classification Confidence Trend (Last 10 Emails)',
         color: 'white',
         font: { size: 14, weight: 'bold' }
-      }
+      },
+      zoom: chartOptions.plugins.zoom
     },
     scales: {
       y: {
@@ -524,7 +589,7 @@ function Charts({ predictions }) {
     }
   };
 
-  // ========== BOX PLOT DATA VISUALIZATION ==========
+  // Box Plot Data
   const allConfidences = predictions.length > 0 
     ? predictions.map(p => p.confidence_percentage) 
     : [0];
@@ -539,19 +604,18 @@ function Charts({ predictions }) {
   const maxVal = sorted[n - 1];
   const meanVal = allConfidences.reduce((a, b) => a + b) / n;
 
-  // Box Plot as vertical Bar Chart
   const boxPlotData = {
     labels: ['Min', 'Q1', 'Median', 'Average', 'Q3', 'Max'],
     datasets: [{
       label: 'Confidence Values (%)',
       data: [minVal, q1Val, medianVal, meanVal, q3Val, maxVal],
       backgroundColor: [
-        '#f44336',  // Red for min
-        '#ff9800',  // Orange for Q1
-        '#2196f3',  // Blue for median
-        '#1976d2',  // Dark blue for average
-        '#4caf50',  // Green for Q3
-        '#4caf50'   // Green for max
+        '#f44336',
+        '#ff9800',
+        '#2196f3',
+        '#1976d2',
+        '#4caf50',
+        '#4caf50'
       ],
       borderColor: [
         '#d32f2f', '#f57c00', '#1565c0', '#1565c0', '#388e3c', '#388e3c'
@@ -562,7 +626,7 @@ function Charts({ predictions }) {
   };
 
   const boxPlotOptions = {
-    indexAxis: 'x', // VERTICAL bars
+    indexAxis: 'x',
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
@@ -572,7 +636,8 @@ function Charts({ predictions }) {
         text: 'Confidence Statistics (All Predictions)',
         color: 'white',
         font: { size: 14, weight: 'bold' }
-      }
+      },
+      zoom: chartOptions.plugins.zoom
     },
     scales: {
       y: {
@@ -603,20 +668,70 @@ function Charts({ predictions }) {
   }
 
   return (
-    <Box sx={{ mt: 4 }}>
-      {/* Header with Export Options */}
-      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+    <Box sx={{ mt: 4 }} >
+      {/* Header with Export Options and NEW Zoom Controls */}
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, flexWrap: 'wrap', gap: 2 }}>
         <Typography variant="h5" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <AssessmentIcon /> Classification Results & Analytics
         </Typography>
-        <Button
-          variant="contained"
-          startIcon={<DownloadIcon />}
-          onClick={exportToCSV}
-          sx={{ bgcolor: '#1976d2' }}
-        >
-          Export Data (CSV)
-        </Button>
+        
+        <Box sx={{ display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
+          {/*  Zoom Controls */}
+          <Paper elevation={2} sx={{ display: 'flex', alignItems: 'center', px: 2, py: 1, gap: 1 }}>
+            <Tooltip title="Zoom Out (50% min)">
+              <IconButton onClick={handleZoomOut} disabled={zoomLevel <= 50} size="small">
+                <ZoomOutIcon />
+              </IconButton>
+            </Tooltip>
+            
+            <Box sx={{ minWidth: 120, mx: 1 }} >
+              <Slider
+                value={zoomLevel}
+                onChange={(e, newValue) => setZoomLevel(newValue)}
+                min={50}
+                max={150}
+                step={10}
+                valueLabelDisplay="auto"
+                valueLabelFormat={(value) => `${value}%`}
+                sx={{ color: 'primary.main' }}
+              />
+            </Box>
+            
+            <Typography variant="body2" sx={{ minWidth: 45, fontWeight: 'bold' }}>
+              {zoomLevel}%
+            </Typography>
+            
+            <Tooltip title="Zoom In (150% max)">
+              <IconButton onClick={handleZoomIn} disabled={zoomLevel >= 150} size="small">
+                <ZoomInIcon />
+              </IconButton>
+            </Tooltip>
+            
+            <Tooltip title="Reset Zoom">
+              <IconButton onClick={handleResetZoom} size="small" color="primary">
+                <RestartAltIcon />
+              </IconButton>
+            </Tooltip>
+          </Paper>
+
+          {/*  Metrics Panel Button */}
+          <Button
+            variant="contained"
+            onClick={() => setMetricsOpen(true)}
+            sx={{ bgcolor: '#1e3a5f' }}
+          >
+            Metrics Panel
+          </Button>
+          
+          <Button
+            variant="contained"
+            startIcon={<DownloadIcon />}
+            onClick={exportToCSV}
+            sx={{ bgcolor: '#1976d2' }}
+          >
+            Export Data (CSV)
+          </Button>
+        </Box>
       </Box>
 
       {/* Chart Filter Buttons */}
@@ -715,7 +830,7 @@ function Charts({ predictions }) {
 
       {/* Charts Grid */}
       <Grid container spacing={3}>
-        {/* Pie Chart - Distribution */}
+        {/* Pie Chart */}
         {(chartFilter === 'all' || chartFilter === 'distribution') && (
           <Grid item xs={12} md={6}>
             <Paper elevation={3} sx={{ p: 3, bgcolor: '#1e3a5f', color: 'white' }}>
@@ -731,14 +846,14 @@ function Charts({ predictions }) {
                   <DownloadIcon />
                 </IconButton>
               </Box>
-              <Box sx={{ height: 300 }}>
+              <Box sx={{ height: 300 }} >
                 <Pie ref={pieChartRef} data={pieData} options={chartOptions} />
               </Box>
             </Paper>
           </Grid>
         )}
 
-        {/* Confidence Bar Chart */}
+        {/* Confidence Line Chart */}
         {(chartFilter === 'all' || chartFilter === 'distribution') && (
           <Grid item xs={12} md={6}>
             <Paper elevation={3} sx={{ p: 3, bgcolor: '#1e3a5f', color: 'white' }}>
@@ -754,7 +869,7 @@ function Charts({ predictions }) {
                   <DownloadIcon />
                 </IconButton>
               </Box>
-              <Box sx={{ height: 300, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+              <Box sx={{ height: 300, display: 'flex', justifyContent: 'center', alignItems: 'center' }} >
                 <Box sx={{ width: '100%', height: '100%' }}>
                   <Line data={confidenceLineData} options={confidenceLineOptions} ref={confidenceChartRef} />
                 </Box>
@@ -763,12 +878,12 @@ function Charts({ predictions }) {
           </Grid>
         )}
 
-        {/* Spam Bar Chart */}
+        {/* Spam Words Bar Chart */}
         {(chartFilter === 'all' || chartFilter === 'distribution') && (
           <Grid item xs={12}>
             <Paper elevation={3} sx={{ p: 3, bgcolor: '#1e3a5f', color: 'white' }}>
               <CardContent>
-                <Box sx={{ position: 'relative', height: 300 }}>
+                <Box sx={{ position: 'relative', height: 300 }} >
                   <Box sx={{ position: 'absolute', top: 0, right: -20, zIndex: 1 }}>
                     <IconButton
                       onClick={() => exportChartAsImage(spamWordChartRef, 'spam_words_chart')}
@@ -780,12 +895,12 @@ function Charts({ predictions }) {
                   </Box>
                   <Bar data={spamWordsData} options={spamWordsOptions} ref={spamWordChartRef} />
                 </Box>
-            </CardContent>
+              </CardContent>
             </Paper>
           </Grid>
         )}
 
-        {/* Ham Bar Chart */}
+        {/* Ham Words Bar Chart */}
         {(chartFilter === 'all' || chartFilter === 'distribution') && (
           <Grid item xs={12}>
             <Paper elevation={3} sx={{ p: 3, bgcolor: '#1e3a5f', color: 'white' }}>
@@ -816,7 +931,6 @@ function Charts({ predictions }) {
                   <Bar data={boxPlotData} options={boxPlotOptions} ref={performanceChartRef} />
                 </Box>
                 
-                {/* Statistics Display */}
                 <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1, mt: 2 }}>
                   <Box sx={{ p: 1.5, bgcolor: '#1e1e1e', borderRadius: 1, border: '1px solid #f44336' }}>
                     <Typography variant="caption" sx={{ fontWeight: 'bold', color: '#f44336' }}>
@@ -886,8 +1000,7 @@ function Charts({ predictions }) {
           </Grid>
         )}
 
-
-        {/* Model Performance Metrics - Linear SVM */}
+        {/* Model Performance Metrics */}
         {metricsData && (chartFilter === 'all' || chartFilter === 'performance') && (
           <Grid item xs={12} md={6}>
             <Paper elevation={3} sx={{ p: 3, bgcolor: '#1e3a5f', color: 'white' }}>
@@ -945,6 +1058,7 @@ function Charts({ predictions }) {
                       }
                     },
                     plugins: {
+                      ...chartOptions.plugins,
                       legend: {
                         labels: {
                           color: 'white'
@@ -979,7 +1093,7 @@ function Charts({ predictions }) {
                   <DownloadIcon />
                 </IconButton>
               </Box>
-              <Box sx={{ height: 300 }}>
+              <Box sx={{ height: 300 }}> 
                 <Bar
                   ref={confusionMatrixRef}
                   data={confusionMatrixData}
@@ -1013,6 +1127,7 @@ function Charts({ predictions }) {
                       }
                     },
                     plugins: {
+                      ...chartOptions.plugins,
                       legend: {
                         labels: {
                           color: 'white'
@@ -1085,6 +1200,114 @@ function Charts({ predictions }) {
           </CardContent>
         </Card>
       )}
+
+      {/* Metrics Drawer Panel */}
+      <Drawer
+        anchor="right"
+        open={metricsOpen}
+        onClose={() => setMetricsOpen(false)}
+        sx={{
+          '& .MuiDrawer-paper': {
+            width: 400,
+            bgcolor: '#1a1a1a',
+            color: 'white',
+            p: 3
+          }
+        }}
+      >
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+          <Typography variant="h5" sx={{ fontWeight: 'bold', display: 'flex', alignItems: 'center', gap: 1 , color: 'white' }}>
+            📊 Key Metrics
+          </Typography>
+          <IconButton onClick={() => setMetricsOpen(false)} sx={{ color: 'white' }}>
+            <CloseIcon />
+          </IconButton>
+        </Box>
+
+        <Divider sx={{ bgcolor: 'rgba(255,255,255,0.2)', mb: 3 }} />
+
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
+          <Card sx={{ bgcolor: '#2a2a2a', border: '2px solid #1976d2' }}>
+            <CardContent>
+              <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.7)' }}>
+                Total Predictions
+              </Typography>
+              <Typography variant="h3" sx={{ color: '#1976d2', fontWeight: 'bold' }}>
+                {predictions.length}
+              </Typography>
+            </CardContent>
+          </Card>
+
+          <Card sx={{ bgcolor: '#2a2a2a', border: '2px solid #f44336' }}>
+            <CardContent>
+              <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.7)' }}>
+                Spam Count
+              </Typography>
+              <Typography variant="h3" sx={{ color: '#f44336', fontWeight: 'bold' }}>
+                {spamCount}
+              </Typography>
+              <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.5)' }}>
+                {predictions.length > 0 ? ((spamCount / predictions.length) * 100).toFixed(1) : 0}% of total
+              </Typography>
+            </CardContent>
+          </Card>
+
+          <Card sx={{ bgcolor: '#2a2a2a', border: '2px solid #4caf50' }}>
+            <CardContent>
+              <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.7)' }}>
+                Ham Count
+              </Typography>
+              <Typography variant="h3" sx={{ color: '#4caf50', fontWeight: 'bold' }}>
+                {hamCount}
+              </Typography>
+              <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.5)' }}>
+                {predictions.length > 0 ? ((hamCount / predictions.length) * 100).toFixed(1) : 0}% of total
+              </Typography>
+            </CardContent>
+          </Card>
+
+          <Card sx={{ bgcolor: '#2a2a2a', border: '2px solid #ff9800' }}>
+            <CardContent>
+              <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.7)' }}>
+                Average Confidence
+              </Typography>
+              <Typography variant="h3" sx={{ color: '#ff9800', fontWeight: 'bold' }}>
+                {avConfidence.toFixed(1)}%
+              </Typography>
+              <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.5)' }}>
+                Model certainty score
+              </Typography>
+            </CardContent>
+          </Card>
+
+          {modelInfo && (
+            <Card sx={{ bgcolor: '#2a2a2a', border: '2px solid #64b5f6' }}>
+              <CardContent>
+                <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.7)' }}>
+                  Model Accuracy
+                </Typography>
+                <Typography variant="h3" sx={{ color: '#64b5f6', fontWeight: 'bold' }}>
+                  {modelInfo.accuracy}%
+                </Typography>
+                <Typography variant="caption" sx={{ color: 'rgba(255,255,255,0.5)' }}>
+                  Linear SVM Performance
+                </Typography>
+              </CardContent>
+            </Card>
+          )}
+        </Box>
+
+        <Divider sx={{ bgcolor: 'rgba(255,255,255,0.2)', my: 3 }} />
+
+        <Button
+          variant="contained"
+          fullWidth
+          onClick={() => setMetricsOpen(false)}
+          sx={{ mt: 2 }}
+        >
+          Close Panel
+        </Button>
+      </Drawer>
     </Box>
   );
 }
