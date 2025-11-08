@@ -544,6 +544,10 @@ function App() {
               p: 2, 
               bgcolor: 'primary.main', 
               color: 'white',
+              borderTopLeftRadius: 8,
+              borderTopRightRadius: 8,
+              borderBottomLeftRadius: 8,
+              borderBottomRightRadius: 8
             }}>
               <Box>
                 <Typography variant="caption" sx={{ opacity: 0.8, display: 'block', mb: 0.5 }}>
