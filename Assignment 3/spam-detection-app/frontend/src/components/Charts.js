@@ -6,7 +6,7 @@ import {
   Download as DownloadIcon,
   Assessment as AssessmentIcon
 } from '@mui/icons-material';
-import { Pie, Bar, Line } from 'react-chartjs-2';
+import { Pie, Bar, Line, Chart } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -19,6 +19,7 @@ import {
   Tooltip,
   Legend
 } from 'chart.js';
+
 import axios from 'axios';
 
 // Register Chart.js components
@@ -31,7 +32,7 @@ ChartJS.register(
   ArcElement,
   Title,
   Tooltip,
-  Legend
+  Legend,
 );
 
 function getHistogramData(predictions, binType = "hour") {
@@ -118,6 +119,8 @@ function Charts({ predictions }) {
   const [chartFilter, setChartFilter] = useState('all'); // 'all', 'distribution', 'performance'
   const pieChartRef = useRef(null);
   const confidenceChartRef = useRef(null);
+  const spamWordChartRef = useRef(null);
+  const hamWordChartRef = useRef(null);
   const timelineChartRef = useRef(null);
   const performanceChartRef = useRef(null);
   const confusionMatrixRef = useRef(null);
@@ -132,7 +135,7 @@ function Charts({ predictions }) {
   // Calculate statistics
   const spamCount = predictions.filter(p => p.prediction === 'Spam').length;
   const hamCount = predictions.filter(p => p.prediction === 'Ham').length;
-  const avgConfidence = predictions.length > 0 
+  const avConfidence = predictions.length > 0 
     ? predictions.reduce((sum, p) => sum + p.confidence_percentage, 0) / predictions.length 
     : 0;
 
@@ -453,6 +456,147 @@ function Charts({ predictions }) {
     }
   };
 
+  const confidenceLineData = {
+  labels: lastTenPredictions.map((p, i) => `Email ${predictions.length - 9 + i}`),
+  datasets: [
+    {
+      label: 'Spam Confidence',
+      data: lastTenPredictions.map(p => p.prediction === 'Spam' ? p.confidence_percentage : null),
+      borderColor: '#f44336',
+      backgroundColor: '#f4433640',
+      fill: true,
+      tension: 0.3,
+      pointRadius: 6,
+      pointBackgroundColor: '#f44336',
+      pointBorderColor: '#fff',
+      pointBorderWidth: 2,
+    },
+    {
+      label: 'Ham Confidence',
+      data: lastTenPredictions.map(p => p.prediction === 'Ham' ? p.confidence_percentage : null),
+      borderColor: '#4caf50',
+      backgroundColor: '#4caf5040',
+      fill: true,
+      tension: 0.3,
+      pointRadius: 6,
+      pointBackgroundColor: '#4caf50',
+      pointBorderColor: '#fff',
+      pointBorderWidth: 2,
+    }
+  ]
+};
+
+  const confidenceLineOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        labels: { color: 'white', font: { weight: 'bold' } }
+      },
+      title: {
+        display: true,
+        text: 'Classification Confidence Trend (Last 10 Emails)',
+        color: 'white',
+        font: { size: 14, weight: 'bold' }
+      }
+    },
+    scales: {
+      y: {
+        min: 0,
+        max: 100,
+        ticks: { 
+          color: 'white',
+          stepSize: 10,
+          callback: function(value) {
+            return value + '%';
+          }
+        },
+        title: { display: true, text: 'Confidence %', color: 'white' }
+      },
+      x: {
+        ticks: { 
+          color: 'white',
+          font: { size: 11 },
+          maxRotation: 45,
+          minRotation: 0
+        }
+      }
+    }
+  };
+
+  // ========== BOX PLOT DATA VISUALIZATION ==========
+  const allConfidences = predictions.length > 0 
+    ? predictions.map(p => p.confidence_percentage) 
+    : [0];
+
+  const sorted = [...allConfidences].sort((a, b) => a - b);
+  const n = sorted.length;
+
+  const minVal = sorted[0];
+  const q1Val = sorted[Math.floor(n * 0.25)];
+  const medianVal = sorted[Math.floor(n * 0.5)];
+  const q3Val = sorted[Math.floor(n * 0.75)];
+  const maxVal = sorted[n - 1];
+  const meanVal = allConfidences.reduce((a, b) => a + b) / n;
+
+  // Box Plot as vertical Bar Chart
+  const boxPlotData = {
+    labels: ['Min', 'Q1', 'Median', 'Average', 'Q3', 'Max'],
+    datasets: [{
+      label: 'Confidence Values (%)',
+      data: [minVal, q1Val, medianVal, meanVal, q3Val, maxVal],
+      backgroundColor: [
+        '#f44336',  // Red for min
+        '#ff9800',  // Orange for Q1
+        '#2196f3',  // Blue for median
+        '#1976d2',  // Dark blue for average
+        '#4caf50',  // Green for Q3
+        '#4caf50'   // Green for max
+      ],
+      borderColor: [
+        '#d32f2f', '#f57c00', '#1565c0', '#1565c0', '#388e3c', '#388e3c'
+      ],
+      borderWidth: 2,
+      borderRadius: 4
+    }]
+  };
+
+  const boxPlotOptions = {
+    indexAxis: 'x', // VERTICAL bars
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { labels: { color: 'white', font: { weight: 'bold' } } },
+      title: {
+        display: true,
+        text: 'Confidence Statistics (All Predictions)',
+        color: 'white',
+        font: { size: 14, weight: 'bold' }
+      }
+    },
+    scales: {
+      y: {
+        beginAtZero: true,
+        max: 100,
+        ticks: { 
+          color: 'white',
+          stepSize: 10,
+          callback: function(value) { return value + '%'; }
+        },
+        title: { display: true, text: 'Confidence (%)', color: 'white' }
+      },
+      x: { ticks: { color: 'white', font: { size: 12, weight: 'bold' } } }
+    }
+  };
+
+  const boxPlotStats = {
+    lowerExtreme: minVal.toFixed(2),
+    lowerQuartile: q1Val.toFixed(2),
+    median: medianVal.toFixed(2),
+    upperQuartile: q3Val.toFixed(2),
+    upperExtreme: maxVal.toFixed(2),
+    mean: meanVal.toFixed(2)
+  };
 
   if (predictions.length === 0) {
     return null;
@@ -559,7 +703,7 @@ function Charts({ predictions }) {
                 Average Confidence
               </Typography>
               <Typography variant="h3" sx={{ color: '#4caf50', fontWeight: 'bold' }}>
-                {avgConfidence.toFixed(1)}%
+                {avConfidence.toFixed(1)}%
               </Typography>
               <Typography variant="caption" color="text.secondary">
                 Model certainty score
@@ -612,57 +756,7 @@ function Charts({ predictions }) {
               </Box>
               <Box sx={{ height: 300, display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
                 <Box sx={{ width: '100%', height: '100%' }}>
-                  <Bar
-                    ref={confidenceChartRef}
-                    data={confidenceData}
-                    options={{
-                      ...chartOptions,
-                      maintainAspectRatio: false,
-                      scales: {
-                        y: {
-                          beginAtZero: true,
-                          max: 100,
-                          grid: {
-                            color: 'rgba(255, 255, 255, 0.1)'
-                          },
-                          ticks: {
-                            color: 'white'
-                          },
-                          title: {
-                            display: true,
-                            text: 'Confidence %',
-                            color: 'white',
-                            font: {
-                              weight: 'bold'
-                            }
-                          }
-                        },
-                        x: {
-                          grid: {
-                            color: 'rgba(255, 255, 255, 0.1)'
-                          },
-                          ticks: {
-                            color: 'white'
-                          },
-                          title: {
-                            display: true,
-                            text: 'Email Samples',
-                            color: 'white',
-                            font: {
-                              weight: 'bold'
-                            }
-                          }
-                        }
-                      },
-                      plugins: {
-                        legend: {
-                          labels: {
-                            color: 'white'
-                          }
-                        }
-                      }
-                    }}
-                  />
+                  <Line data={confidenceLineData} options={confidenceLineOptions} ref={confidenceChartRef} />
                 </Box>
               </Box>
             </Paper>
@@ -674,44 +768,124 @@ function Charts({ predictions }) {
           <Grid item xs={12}>
             <Paper elevation={3} sx={{ p: 3, bgcolor: '#1e3a5f', color: 'white' }}>
               <CardContent>
-                <Box sx={{ position: 'relative', height: 400 }}>
+                <Box sx={{ position: 'relative', height: 300 }}>
                   <Box sx={{ position: 'absolute', top: 0, right: -20, zIndex: 1 }}>
                     <IconButton
-                      onClick={() => exportChartAsImage(confidenceChartRef, 'spam_words_chart')}
+                      onClick={() => exportChartAsImage(spamWordChartRef, 'spam_words_chart')}
                       sx={{ color: 'white' }}
                       size="small"
                     >
                       <DownloadIcon />
                     </IconButton>
                   </Box>
-                  <Bar data={spamWordsData} options={spamWordsOptions} ref={confidenceChartRef} />
+                  <Bar data={spamWordsData} options={spamWordsOptions} ref={spamWordChartRef} />
                 </Box>
             </CardContent>
             </Paper>
           </Grid>
         )}
 
-        {/* Spam Bar Chart */}
+        {/* Ham Bar Chart */}
         {(chartFilter === 'all' || chartFilter === 'distribution') && (
           <Grid item xs={12}>
             <Paper elevation={3} sx={{ p: 3, bgcolor: '#1e3a5f', color: 'white' }}>
               <CardContent>
-                <Box sx={{ position: 'relative', height: 400 }}>
+                <Box sx={{ position: 'relative', height: 300 }}>
                   <Box sx={{ position: 'absolute', top: 0, right: -20, zIndex: 1 }}>
                     <IconButton
-                      onClick={() => exportChartAsImage(timelineChartRef, 'ham_words_chart')}
+                      onClick={() => exportChartAsImage(hamWordChartRef, 'ham_words_chart')}
                       sx={{ color: 'white' }}
                       size="small"
                     >
                       <DownloadIcon />
                     </IconButton>
                   </Box>
-                  <Bar data={hamWordsData} options={hamWordsOptions} ref={timelineChartRef} />
+                  <Bar data={hamWordsData} options={hamWordsOptions} ref={hamWordChartRef} />
                 </Box>
               </CardContent>
             </Paper>
           </Grid>
         )}
+
+        {/* Box Plot Chart */}
+        {(chartFilter === 'all' || chartFilter === 'distribution') && (
+          <Grid item xs={12} md={6}>
+            <Card sx={{ bgcolor: '#2a2a2a' }}>
+              <CardContent>
+                <Box sx={{ height: 400 }}>
+                  <Bar data={boxPlotData} options={boxPlotOptions} ref={performanceChartRef} />
+                </Box>
+                
+                {/* Statistics Display */}
+                <Box sx={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 1, mt: 2 }}>
+                  <Box sx={{ p: 1.5, bgcolor: '#1e1e1e', borderRadius: 1, border: '1px solid #f44336' }}>
+                    <Typography variant="caption" sx={{ fontWeight: 'bold', color: '#f44336' }}>
+                      Lower Extreme (Min)
+                    </Typography>
+                    <Typography variant="h6" sx={{ color: 'white', fontWeight: 'bold' }}>
+                      {boxPlotStats.lowerExtreme}%
+                    </Typography>
+                  </Box>
+                  
+                  <Box sx={{ p: 1.5, bgcolor: '#1e1e1e', borderRadius: 1, border: '1px solid #ff9800' }}>
+                    <Typography variant="caption" sx={{ fontWeight: 'bold', color: '#ff9800' }}>
+                      Lower Quartile (Q1)
+                    </Typography>
+                    <Typography variant="h6" sx={{ color: 'white', fontWeight: 'bold' }}>
+                      {boxPlotStats.lowerQuartile}%
+                    </Typography>
+                  </Box>
+                  
+                  <Box sx={{ p: 1.5, bgcolor: '#1e1e1e', borderRadius: 1, border: '1px solid #2196f3' }}>
+                    <Typography variant="caption" sx={{ fontWeight: 'bold', color: '#2196f3' }}>
+                      Median
+                    </Typography>
+                    <Typography variant="h6" sx={{ color: 'white', fontWeight: 'bold' }}>
+                      {boxPlotStats.median}%
+                    </Typography>
+                  </Box>
+                  
+                  <Box sx={{ p: 1.5, bgcolor: '#1e1e1e', borderRadius: 1, border: '1px solid #4caf50' }}>
+                    <Typography variant="caption" sx={{ fontWeight: 'bold', color: '#4caf50' }}>
+                      Upper Quartile (Q3)
+                    </Typography>
+                    <Typography variant="h6" sx={{ color: 'white', fontWeight: 'bold' }}>
+                      {boxPlotStats.upperQuartile}%
+                    </Typography>
+                  </Box>
+                  
+                  <Box sx={{ p: 1.5, bgcolor: '#1e1e1e', borderRadius: 1, border: '1px solid #4caf50' }}>
+                    <Typography variant="caption" sx={{ fontWeight: 'bold', color: '#4caf50' }}>
+                      Upper Extreme (Max)
+                    </Typography>
+                    <Typography variant="h6" sx={{ color: 'white', fontWeight: 'bold' }}>
+                      {boxPlotStats.upperExtreme}%
+                    </Typography>
+                  </Box>
+                  
+                  <Box sx={{ p: 1.5, bgcolor: '#1e1e1e', borderRadius: 1, border: '1px solid #1976d2' }}>
+                    <Typography variant="caption" sx={{ fontWeight: 'bold', color: '#1976d2' }}>
+                      Mean
+                    </Typography>
+                    <Typography variant="h6" sx={{ color: 'white', fontWeight: 'bold' }}>
+                      {boxPlotStats.mean}%
+                    </Typography>
+                  </Box>
+                </Box>
+                
+                <Button
+                  onClick={() => exportChartAsImage(performanceChartRef, 'confidence_boxplot')}
+                  sx={{ color: 'white', borderColor: 'white', fontSize: '0.75rem', py: 0.5, px: 1, mt: 2 }}
+                  variant="outlined"
+                  size="small"
+                >
+                  Save Chart
+                </Button>
+              </CardContent>
+            </Card>
+          </Grid>
+        )}
+
 
         {/* Model Performance Metrics - Linear SVM */}
         {metricsData && (chartFilter === 'all' || chartFilter === 'performance') && (
@@ -736,6 +910,7 @@ function Charts({ predictions }) {
               </Box>
               <Box sx={{ height: 300 }}>
                 <Bar
+                  height={300}
                   ref={performanceChartRef}
                   data={metricsData}
                   options={{
