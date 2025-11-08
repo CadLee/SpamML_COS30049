@@ -159,6 +159,7 @@ class PredictionDatabase:
     def delete_all_predictions(self) -> bool:
         """Clear all predictions from database"""
         try:
+            self.filepath.unlink(missing_ok=True) # Delete existing file (Comment this line, if you want to keep the data in JSON file but clear predictions in website)
             self.init_database()  # Reset to empty database
             logger.warning("All predictions deleted")
             return True

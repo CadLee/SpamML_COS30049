@@ -227,6 +227,7 @@ function App() {
         setPredictionHistory([]);
         setStatistics(null);
         alert('All predictions cleared successfully');
+        setOpenClearDialog(false);
       } catch (err) {
         alert('Failed to clear predictions: ' + err.message);
       }
