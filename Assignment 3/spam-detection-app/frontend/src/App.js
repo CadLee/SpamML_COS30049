@@ -608,9 +608,7 @@ function App() {
             bgcolor: 'primary.main', 
             color: 'white',
             py: 4, 
-            mt: 'auto',
-            borderTop: '4px solid',
-            borderColor: 'primary.dark'
+            mt: 'auto'
           }}
         >
           <Container maxWidth="xl">
