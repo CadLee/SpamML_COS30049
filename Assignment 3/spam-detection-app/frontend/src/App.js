@@ -12,17 +12,14 @@
  * @course COS30049 - Computing Technology Innovation Project
  */
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   AppBar, Toolbar, Typography, Container, Box, ThemeProvider, createTheme, 
   CssBaseline, IconButton, Tooltip, Button, Dialog, DialogTitle, 
-  DialogContent, DialogContentText, DialogActions, Divider, Paper, Tabs, Tab
+  DialogContent, DialogContentText, DialogActions, Divider, Tabs, Tab
 } from '@mui/material';
 import { 
-  Download as DownloadIcon,
   DeleteForever as DeleteIcon,
-  Upload as UploadIcon,
-  Save as SaveIcon
 } from '@mui/icons-material';
 import EmailClassifier from './components/EmailClassifier';
 import Charts from './components/Charts';
@@ -196,9 +193,6 @@ function App() {
       console.error('Failed to load statistics:', err);
     }
   };
-
-  // Ref: Hidden file input for loading JSON files
-  const fileInputRef = useRef(null);
 
   /**
    * Adds a new prediction to history
