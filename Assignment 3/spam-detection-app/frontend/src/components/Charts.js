@@ -38,7 +38,14 @@ ChartJS.register(
 // Reusable Chart Card
 function ChartCard({ title, children, height = 300, onDownload }) {
   return (
-    <Card sx={{ bgcolor: '#1e3a5f', color: 'white', p: 2 }}>
+    <Card sx={{
+        p: 2,
+        borderRadius: 4, // more rounded corners
+        bgcolor: '#1e3a5f',
+        color: 'white',
+        boxShadow: '0 6px 20px rgba(0,0,0,0.6)', // subtle shadow
+      }}
+    >
       <CardContent>
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
           <Typography variant="h6" sx={{ fontWeight: 'bold' }}>{title}</Typography>
@@ -268,6 +275,8 @@ function Charts({ predictions }) {
                 title="Spam vs Ham Distribution"
                 onDownload={() => handleChartDownload(pieChartRef, 'Spam_vs_Ham_Distribution')}
                 height={300}
+                style={{ width: '100%', height: '100%' }}
+                options={{ maintainAspectRatio: false }}
               >
                 <Pie ref={pieChartRef} data={pieData} options={{ responsive: true, maintainAspectRatio: false }} />
               </ChartCard>
@@ -278,6 +287,8 @@ function Charts({ predictions }) {
                 title="Classification Confidence Levels"
                 onDownload={() => handleChartDownload(confidenceChartRef, 'Classification_Confidence')}
                 height={300}
+                style={{ width: '100%', height: '100%' }}
+                options={{ maintainAspectRatio: false }}
               >
                 <Line ref={confidenceChartRef} data={confidenceLineData} options={confidenceLineOptions} />
               </ChartCard>
