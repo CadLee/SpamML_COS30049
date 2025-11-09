@@ -66,6 +66,9 @@ function Charts({ predictions }) {
   const hamWordChartRef = useRef(null);
   const performanceChartRef = useRef(null);
 
+  if (predictions.length === 0) return null;
+ 
+  // Chart Data
   const modelInfo = {
     TN: 30374,
     FP: 4717,
@@ -79,10 +82,6 @@ function Charts({ predictions }) {
     f1_spam: 0.91
   };
 
-  if (predictions.length === 0) return null;
-
- 
-  // Chart Data
   const spamCount = predictions.filter(p => p.prediction === 'Spam').length;
   const hamCount = predictions.filter(p => p.prediction === 'Ham').length;
 
@@ -168,6 +167,7 @@ function Charts({ predictions }) {
   const performanceOptions = {
     indexAxis: 'y',
     responsive: true,
+    maintainAspectRatio: false,
     plugins: { legend: { labels: { color: 'white' } } },
     scales: {
       x: { beginAtZero: true, max: 100, ticks: { color: 'white' }, grid: { color: 'rgba(255,255,255,0.1)' } },
