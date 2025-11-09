@@ -120,7 +120,7 @@ function Charts({ predictions }) {
       }
     ]
   };
-  const confidenceLineOptions = { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: 'white' } } } };
+  const confidenceLineOptions = { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: 'white' } } }, scales: { x: { ticks: { color: 'white' } }, y: { ticks: { color: 'white' } } } };
 
   const extractTopWords = (preds, type, topN = 10) => {
     const filtered = preds.filter(p => p.prediction === type);
@@ -223,13 +223,13 @@ function Charts({ predictions }) {
 
             <Grid item xs={12}>
               <ChartCard title="Top 10 Common Words in Spam Emails" chartRef={spamWordChartRef} height={300}>
-                <Bar ref={spamWordChartRef} data={spamWordsData} options={{ responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: 'white' } } } }} />
+                <Bar ref={spamWordChartRef} data={spamWordsData} options={{ responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: 'white' } } },  scales: { x: { ticks: { color: 'white' } }, y: { ticks: { color: 'white' } } } } } />
               </ChartCard>
             </Grid>
 
             <Grid item xs={12}>
               <ChartCard title="Top 10 Common Words in Ham Emails" chartRef={hamWordChartRef} height={300}>
-                <Bar ref={hamWordChartRef} data={hamWordsData} options={{ responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: 'white' } } } }} />
+                <Bar ref={hamWordChartRef} data={hamWordsData} options={{ responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: 'white' } } }, scales: { x: { ticks: { color: 'white' } }, y: { ticks: { color: 'white' } } } } } />
               </ChartCard>
             </Grid>
 
