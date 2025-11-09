@@ -96,9 +96,10 @@ function Charts({ predictions }) {
     }]
   };
 
+  const startIndex = Math.max(predictions.length - 9, 1);
   const lastTen = predictions.slice(-10);
   const confidenceLineData = {
-    labels: lastTen.map((_, i) => `Email ${predictions.length - 9 + i}`),
+    labels: lastTen.map((_, i) => `Email ${startIndex + i}`),
     datasets: [
       {
         label: 'Spam Confidence',
@@ -174,6 +175,59 @@ function Charts({ predictions }) {
     }
   };
 
+  // Download Chart.js chart as PNG
+  const handleChartDownload = (chartRef, title) => {
+    const chart = chartRef.current;
+    if (!chart) return;
+
+    const url = chart.toBase64Image(); // Chart.js built-in method
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${title || 'chart'}.png`;
+    link.click();
+  };
+
+  // Download D3 charts as SVG
+  const handleD3Download = (containerId, title) => {
+    const svg = document.querySelector(`#${containerId} svg`);
+    if (!svg) return;
+
+    const serializer = new XMLSerializer();
+    const svgBlob = new Blob([serializer.serializeToString(svg)], { type: 'image/svg+xml;charset=utf-8' });
+    const url = URL.createObjectURL(svgBlob);
+
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `${title || 'chart'}.svg`;
+    link.click();
+
+    URL.revokeObjectURL(url);
+  };
+
+  const handleCSVDownload = () => {
+    if (!predictions || predictions.length === 0) return;
+
+    // Extract headers from keys of the first prediction
+    const headers = Object.keys(predictions[0]);
+
+    // Convert each row to CSV string
+    const csvRows = [
+      headers.join(','), // header row
+      ...predictions.map(p => headers.map(h => `"${p[h]}"`).join(',')) // data rows
+    ];
+
+    const csvString = csvRows.join('\n');
+
+    // Create blob and trigger download
+    const blob = new Blob([csvString], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = 'predictions.csv';
+    link.click();
+    URL.revokeObjectURL(url);
+  };
+
   // Render
   return (
     <Box sx={{ mt: 4 }}>
@@ -181,7 +235,7 @@ function Charts({ predictions }) {
         <Typography variant="h5" sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
           <AssessmentIcon /> Classification Results & Analytics
         </Typography>
-        <Button variant="contained" startIcon={<DownloadIcon />} sx={{ bgcolor: '#1976d2' }}>
+        <Button variant="contained" startIcon={<DownloadIcon />} onClick={handleCSVDownload} sx={{ bgcolor: '#1e3a5f' }}>
           Export Data (CSV)
         </Button>
       </Box>
@@ -210,25 +264,34 @@ function Charts({ predictions }) {
         {(chartFilter === 'all' || chartFilter === 'distribution') && (
           <>
             <Grid item xs={12} md={6}>
-              <ChartCard title="Spam vs Ham Distribution" chartRef={pieChartRef} height={300}>
+              <ChartCard
+                title="Spam vs Ham Distribution"
+                onDownload={() => handleChartDownload(pieChartRef, 'Spam_vs_Ham_Distribution')}
+                height={300}
+              >
                 <Pie ref={pieChartRef} data={pieData} options={{ responsive: true, maintainAspectRatio: false }} />
               </ChartCard>
             </Grid>
 
             <Grid item xs={12} md={6}>
-              <ChartCard title="Classification Confidence Levels" chartRef={confidenceChartRef} height={300}>
+              <ChartCard
+                title="Classification Confidence Levels"
+                onDownload={() => handleChartDownload(confidenceChartRef, 'Classification_Confidence')}
+                height={300}
+              >
                 <Line ref={confidenceChartRef} data={confidenceLineData} options={confidenceLineOptions} />
               </ChartCard>
             </Grid>
 
             <Grid item xs={12}>
-              <ChartCard title="Top 10 Common Words in Spam Emails" chartRef={spamWordChartRef} height={300}>
+              <ChartCard title="Top 10 Common Words in Spam Emails" onDownload={() => handleChartDownload(spamWordChartRef, 'Top_Spam_Words')} height={300}>
                 <Bar ref={spamWordChartRef} data={spamWordsData} options={{ responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: 'white' } } },  scales: { x: { ticks: { color: 'white' } }, y: { ticks: { color: 'white' } } } } } />
               </ChartCard>
             </Grid>
+            
 
             <Grid item xs={12}>
-              <ChartCard title="Top 10 Common Words in Ham Emails" chartRef={hamWordChartRef} height={300}>
+              <ChartCard title="Top 10 Common Words in Ham Emails" onDownload={() => handleChartDownload(hamWordChartRef, 'Top_Ham_Words')} height={300}>
                 <Bar ref={hamWordChartRef} data={hamWordsData} options={{ responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: 'white' } } }, scales: { x: { ticks: { color: 'white' } }, y: { ticks: { color: 'white' } } } } } />
               </ChartCard>
             </Grid>
@@ -236,11 +299,12 @@ function Charts({ predictions }) {
             <Grid item xs={12} md={6}>
               <ChartCard
                 title="Confidence Distribution Box Plot"
+                onDownload={() => handleD3Download('confidence-distribution', 'Confidence_BoxPlot')}
                 height={450}
               >
-                <Box sx={{ 
+                <Box id="confidence-distribution" sx={{ 
                   height: 450, 
-                  bgcolor: '#1e1e1eff', 
+                  bgcolor: '#1e3a5f', 
                   borderRadius: 1,
                   p: 2,
                   display: 'flex',
@@ -339,23 +403,27 @@ function Charts({ predictions }) {
         {(chartFilter === 'all' || chartFilter === 'performance') && modelInfo && (
           <>
             <Grid item xs={12} md={6}>
-              <ChartCard title="Linear SVM Model Performance" chartRef={performanceChartRef} height={300}>
+              <ChartCard title="Linear SVM Model Performance" onDownload={() => handleChartDownload(performanceChartRef, 'SVM_Performance')} height={300}>
                 <Bar ref={performanceChartRef} data={performanceData} options={performanceOptions} />
               </ChartCard>
             </Grid>
 
             <Grid item xs={12} md={6}>
-              <ChartCard title="Confusion Matrix (Heatmap)" height={300}>
-                <ConfusionMatrixD3
-                  data={[
-                    { x: 0, y: 0, v: modelInfo.TN },
-                    { x: 1, y: 0, v: modelInfo.FP },
-                    { x: 0, y: 1, v: modelInfo.FN },
-                    { x: 1, y: 1, v: modelInfo.TP }
-                  ]}
-                  width={300}
-                  height={300}
-                />
+              <ChartCard title="Confusion Matrix (Heatmap)"
+              onDownload={() => handleD3Download('confusion-matrix', 'Confusion_Matrix')} 
+              height={300}>
+                <Box id="confusion-matrix">
+                  <ConfusionMatrixD3
+                    data={[
+                      { x: 0, y: 0, v: modelInfo.TN },
+                      { x: 1, y: 0, v: modelInfo.FP },
+                      { x: 0, y: 1, v: modelInfo.FN },
+                      { x: 1, y: 1, v: modelInfo.TP }
+                    ]}
+                    width={300}
+                    height={300}
+                  />
+                </Box>
               </ChartCard>
             </Grid>
           </>
