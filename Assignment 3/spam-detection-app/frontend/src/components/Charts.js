@@ -240,7 +240,7 @@ function Charts({ predictions }) {
               >
                 <Box sx={{ 
                   height: 450, 
-                  bgcolor: '#2a2a2a', 
+                  bgcolor: '#1e1e1eff', 
                   borderRadius: 1,
                   p: 2,
                   display: 'flex',
