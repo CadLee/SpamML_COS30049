@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useRef } from 'react';
 import {
   Card, CardContent, Typography, Box, Button, ButtonGroup, IconButton
 } from '@mui/material';
@@ -21,8 +21,6 @@ import {
 import BoxPlotD3 from './D3BoxPlot';
 import ConfusionMatrixD3 from './ConfusionMatrixD3';
 
-import axios from 'axios';
-
 // Register Chart.js components
 ChartJS.register(
   CategoryScale,
@@ -38,7 +36,7 @@ ChartJS.register(
 
 
 // Reusable Chart Card
-function ChartCard({ title, chartRef, children, height = 300, onDownload }) {
+function ChartCard({ title, children, height = 300, onDownload }) {
   return (
     <Card sx={{ bgcolor: '#1e3a5f', color: 'white', p: 2 }}>
       <CardContent>
@@ -60,7 +58,6 @@ function ChartCard({ title, chartRef, children, height = 300, onDownload }) {
 
 // Main Charts Component
 function Charts({ predictions }) {
-  const [modelInfo, setModelInfo] = useState(null);
   const [chartFilter, setChartFilter] = useState('all');
 
   const pieChartRef = useRef(null);
@@ -69,11 +66,18 @@ function Charts({ predictions }) {
   const hamWordChartRef = useRef(null);
   const performanceChartRef = useRef(null);
 
-  useEffect(() => {
-    axios.get('http://localhost:8000/model-info')
-      .then(res => setModelInfo(res.data))
-      .catch(err => console.error(err));
-  }, []);
+  const modelInfo = {
+    TN: 30374,
+    FP: 4717,
+    FN: 2055,
+    TP: 34166,
+    precision_ham: 0.94,
+    precision_spam: 0.89,
+    recall_ham: 0.94,
+    recall_spam: 0.93,
+    f1_ham: 0.94,
+    f1_spam: 0.91
+  };
 
   if (predictions.length === 0) return null;
 

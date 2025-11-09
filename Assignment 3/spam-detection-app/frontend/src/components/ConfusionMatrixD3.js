@@ -22,8 +22,8 @@ function ConfusionMatrixD3({ data, width = 300, height = 300 }) {
       .append('g')
       .attr('transform', `translate(${margin.left},${margin.top})`);
 
-    const xLabels = ['Ham (Pred)', 'Spam (Pred)'];
-    const yLabels = ['Ham (Actual)', 'Spam (Actual)'];
+    const xLabels = ['Ham Predicted', 'Spam Predicted'];
+    const yLabels = ['Ham True', 'Spam True'];
 
     const maxVal = d3.max(data, d => d.v);
 
@@ -90,26 +90,51 @@ function ConfusionMatrixD3({ data, width = 300, height = 300 }) {
       .attr('fill', 'white');
 
     // Legend
-    const legendWidth = 100;
+    const legendWidth = 200;
     const legendHeight = 10;
     const legendMargin = { top: chartHeight + 30, left: 0 };
-    const legendData = d3.range(0, maxVal + 1);
 
-    const legendScale = d3.scaleLinear().domain([0, maxVal]).range([0, legendWidth]);
-    const legendAxis = d3.axisBottom(legendScale).ticks(3).tickSize(4).tickFormat(d3.format('d'));
+    // Create defs for gradient
+    const defs = svg.append('defs');
+    const gradientId = 'legend-gradient';
 
+    const gradient = defs.append('linearGradient')
+      .attr('id', gradientId)
+      .attr('x1', '0%')
+      .attr('y1', '0%')
+      .attr('x2', '100%')
+      .attr('y2', '0%');
+
+    // Define gradient stops
+    gradient.append('stop')
+      .attr('offset', '0%')
+      .attr('stop-color', '#bbdefb');
+
+    gradient.append('stop')
+      .attr('offset', '100%')
+      .attr('stop-color', '#1565c0');
+
+    // Create legend group
     const legend = chart.append('g')
       .attr('transform', `translate(${legendMargin.left},${legendMargin.top})`);
 
-    legend.selectAll('rect')
-      .data(legendData)
-      .enter()
-      .append('rect')
-      .attr('x', d => legendScale(d))
+    // Draw the rectangle with gradient
+    legend.append('rect')
+      .attr('x', 0)
       .attr('y', 0)
-      .attr('width', legendWidth / legendData.length)
+      .attr('width', legendWidth)
       .attr('height', legendHeight)
-      .attr('fill', d => color(d));
+      .style('fill', `url(#${gradientId})`);
+
+    // Add legend axis
+    const legendScale = d3.scaleLinear()
+      .domain([0, maxVal])
+      .range([0, legendWidth]);
+
+    const legendAxis = d3.axisBottom(legendScale)
+      .ticks(3)
+      .tickSize(4)
+      .tickFormat(d3.format('d'));
 
     legend.append('g')
       .attr('transform', `translate(0, ${legendHeight})`)
