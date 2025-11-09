@@ -16,6 +16,7 @@
     "chartjs-chart-box-and-violin-plot": "^4.0.0",
     "chartjs-chart-matrix": "^3.0.0",
     "chartjs-chart-treemap": "^3.1.0",
+    "d3": "^7.9.0",
     "react": "^19.2.0",
     "react-chartjs-2": "^5.3.1",
     "react-dom": "^19.2.0",

@@ -18,7 +18,9 @@ import {
   Legend
 } from 'chart.js';
 import { MatrixController, MatrixElement } from 'chartjs-chart-matrix';
-import { BoxPlot } from 'chartjs-chart-box-and-violin-plot';
+
+import D3BoxPlot from './D3BoxPlot';
+
 import axios from 'axios';
 
 // Register Chart.js components
@@ -34,8 +36,6 @@ ChartJS.register(
   Legend,
   MatrixController,
   MatrixElement,
-  BoxPlotController, 
-  BoxAndWhiskers
 );
 
 // ====================
@@ -284,8 +284,103 @@ function Charts({ predictions }) {
             </Grid>
 
             <Grid item xs={12} md={6}>
-              <ChartCard title="Confidence Statistics (Box Plot)" chartRef={boxPlotRef} height={300}>
-                <ReactChart ref={boxPlotRef} type="boxplot" data={boxData} options={boxOptions} />
+              <ChartCard
+                title="Confidence Distribution Box Plot"
+                height={450}
+              >
+                <Box sx={{ 
+                  height: 450, 
+                  bgcolor: '#2a2a2a', 
+                  borderRadius: 1,
+                  p: 2,
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center'
+                }}>
+                  <D3BoxPlot 
+                    data={predictions.map(p => p.confidence_percentage)}
+                    title="Confidence Distribution"
+                  />
+                </Box>
+
+                {/* Statistics Display Below */}
+                <Box sx={{ 
+                  display: 'grid', 
+                  gridTemplateColumns: '1fr 1fr 1fr', 
+                  gap: 1.5, 
+                  mt: 2 
+                }}>
+                  {(() => {
+                    const confData = predictions.map(p => p.confidence_percentage).sort((a, b) => a - b);
+                    const n = confData.length;
+                    const stats = {
+                      min: confData[0],
+                      q1: confData[Math.floor(n * 0.25)],
+                      median: confData[Math.floor(n * 0.5)],
+                      mean: confData.reduce((a, b) => a + b) / n,
+                      q3: confData[Math.floor(n * 0.75)],
+                      max: confData[n - 1]
+                    };
+
+                    return (
+                      <>
+                        <Box sx={{ p: 1.5, bgcolor: '#1e1e1e', borderRadius: 1, border: '1px solid #f44336' }}>
+                          <Typography variant="caption" sx={{ fontWeight: 'bold', color: '#f44336' }}>
+                            Minimum
+                          </Typography>
+                          <Typography variant="h6" sx={{ color: 'white', fontWeight: 'bold' }}>
+                            {stats.min.toFixed(2)}%
+                          </Typography>
+                        </Box>
+
+                        <Box sx={{ p: 1.5, bgcolor: '#1e1e1e', borderRadius: 1, border: '1px solid #ff9800' }}>
+                          <Typography variant="caption" sx={{ fontWeight: 'bold', color: '#ff9800' }}>
+                            Q1 (25th Percentile)
+                          </Typography>
+                          <Typography variant="h6" sx={{ color: 'white', fontWeight: 'bold' }}>
+                            {stats.q1.toFixed(2)}%
+                          </Typography>
+                        </Box>
+
+                        <Box sx={{ p: 1.5, bgcolor: '#1e1e1e', borderRadius: 1, border: '1px solid #2196f3' }}>
+                          <Typography variant="caption" sx={{ fontWeight: 'bold', color: '#2196f3' }}>
+                            Median
+                          </Typography>
+                          <Typography variant="h6" sx={{ color: 'white', fontWeight: 'bold' }}>
+                            {stats.median.toFixed(2)}%
+                          </Typography>
+                        </Box>
+
+                        <Box sx={{ p: 1.5, bgcolor: '#1e1e1e', borderRadius: 1, border: '1px solid #1976d2' }}>
+                          <Typography variant="caption" sx={{ fontWeight: 'bold', color: '#1976d2' }}>
+                            Mean
+                          </Typography>
+                          <Typography variant="h6" sx={{ color: 'white', fontWeight: 'bold' }}>
+                            {stats.mean.toFixed(2)}%
+                          </Typography>
+                        </Box>
+
+                        <Box sx={{ p: 1.5, bgcolor: '#1e1e1e', borderRadius: 1, border: '1px solid #4caf50' }}>
+                          <Typography variant="caption" sx={{ fontWeight: 'bold', color: '#4caf50' }}>
+                            Q3 (75th Percentile)
+                          </Typography>
+                          <Typography variant="h6" sx={{ color: 'white', fontWeight: 'bold' }}>
+                            {stats.q3.toFixed(2)}%
+                          </Typography>
+                        </Box>
+
+                        <Box sx={{ p: 1.5, bgcolor: '#1e1e1e', borderRadius: 1, border: '1px solid #4caf50' }}>
+                          <Typography variant="caption" sx={{ fontWeight: 'bold', color: '#4caf50' }}>
+                            Maximum
+                          </Typography>
+                          <Typography variant="h6" sx={{ color: 'white', fontWeight: 'bold' }}>
+                            {stats.max.toFixed(2)}%
+                          </Typography>
+                        </Box>
+                      </>
+                    );
+                  })()}
+                </Box>
               </ChartCard>
             </Grid>
           </>
