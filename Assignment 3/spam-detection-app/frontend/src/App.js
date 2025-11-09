@@ -318,84 +318,86 @@ function App() {
         </AppBar>
 
         {/* Main Content Area */}
-        <Container component="main" sx={{ mt: 6, mb: 6, flex: 1 }} maxWidth="xl">
-          
-          {/* Title Section */}
-          <Box sx={{ mb: 6 }}>
-            <Typography variant="h3" component="h1" gutterBottom sx={{ mb: 2 }}>
-              CoastGuard Spam Detection System
-            </Typography>
-            <Typography variant="h6" color="text.secondary" sx={{ mb: 3, fontWeight: 400 }}>
-              Enterprise-grade AI-powered email classification using Linear Support Vector Machine
-            </Typography>
-            <Box sx={{ 
-              display: 'inline-flex',
-              alignItems: 'center',
-              gap: 3,
-              p: 2, 
-              bgcolor: 'primary.main', 
-              color: 'white',
-              borderTopLeftRadius: 8,
-              borderTopRightRadius: 8,
-              borderBottomLeftRadius: 8,
-              borderBottomRightRadius: 8
-            }}>
-              <Box>
-                <Typography variant="caption" sx={{ opacity: 0.8, display: 'block', mb: 0.5 }}>
-                  MODEL ACCURACY
-                </Typography>
-                <Typography variant="h6" sx={{ fontWeight: 700 }}>
-                  90.50%
-                </Typography>
-              </Box>
-              <Divider orientation="vertical" flexItem sx={{ bgcolor: 'rgba(255,255,255,0.3)' }} />
-              <Box>
-                <Typography variant="caption" sx={{ opacity: 0.8, display: 'block', mb: 0.5 }}>
-                  ALGORITHM
-                </Typography>
-                <Typography variant="body2" sx={{ fontWeight: 600 }}>
-                  LINEAR SVM
-                </Typography>
+        <Box sx={{ display: 'flex', flexDirection: 'column', flex: 1 }}>
+          <Container component="main" sx={{ mt: 6, mb: 6, flex: 1 }} maxWidth="xl">
+
+            {/* Title Section */}
+            <Box sx={{ mb: 6 }}>
+              <Typography variant="h3" component="h1" gutterBottom sx={{ mb: 2 }}>
+                CoastGuard Spam Detection System
+              </Typography>
+              <Typography variant="h6" color="text.secondary" sx={{ mb: 3, fontWeight: 400 }}>
+                Enterprise-grade AI-powered email classification using Linear Support Vector Machine
+              </Typography>
+              <Box sx={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: 3,
+                p: 2,
+                bgcolor: 'primary.main',
+                color: 'white',
+                borderTopLeftRadius: 8,
+                borderTopRightRadius: 8,
+                borderBottomLeftRadius: 8,
+                borderBottomRightRadius: 8
+              }}>
+                <Box>
+                  <Typography variant="caption" sx={{ opacity: 0.8, display: 'block', mb: 0.5 }}>
+                    MODEL ACCURACY
+                  </Typography>
+                  <Typography variant="h6" sx={{ fontWeight: 700 }}>
+                    90.50%
+                  </Typography>
+                </Box>
+                <Divider orientation="vertical" flexItem sx={{ bgcolor: 'rgba(255,255,255,0.3)' }} />
+                <Box>
+                  <Typography variant="caption" sx={{ opacity: 0.8, display: 'block', mb: 0.5 }}>
+                    ALGORITHM
+                  </Typography>
+                  <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                    LINEAR SVM
+                  </Typography>
+                </Box>
               </Box>
             </Box>
-          </Box>
 
-          <TabPanel value={tabValue} index={0}>
-            <EmailClassifier onPrediction={addPrediction} />
-          </TabPanel>
+            <TabPanel value={tabValue} index={0}>
+              <EmailClassifier onPrediction={addPrediction} />
+            </TabPanel>
 
-          <TabPanel value={tabValue} index={1}>
-            {predictionHistory.length > 0 ? (
-              <Charts predictions={predictionHistory} />
-            ) : (
-              <Box sx={{ textAlign: 'center', py: 4 }}>
-                <Typography variant="body1" color="text.secondary">
-                  No predictions yet. Classify some emails to see charts and analytics.
-                </Typography>
-              </Box>
-            )}
-          </TabPanel>
+            <TabPanel value={tabValue} index={1}>
+              {predictionHistory.length > 0 ? (
+                <Charts predictions={predictionHistory} />
+              ) : (
+                <Box sx={{ textAlign: 'center', py: 4 }}>
+                  <Typography variant="body1" color="text.secondary">
+                    No predictions yet. Classify some emails to see charts and analytics.
+                  </Typography>
+                </Box>
+              )}
+            </TabPanel>
 
-          <TabPanel value={tabValue} index={2}>
-            {statistics ? (
-              <Statistics statistics={statistics} />
-            ) : (
-              <Box sx={{ textAlign: 'center', py: 4 }}>
-                <Typography variant="body1" color="text.secondary">
-                  No statistics available yet.
-                </Typography>
-              </Box>
-            )}
-          </TabPanel>
+            <TabPanel value={tabValue} index={2}>
+              {statistics ? (
+                <Statistics statistics={statistics} />
+              ) : (
+                <Box sx={{ textAlign: 'center', py: 4 }}>
+                  <Typography variant="body1" color="text.secondary">
+                    No statistics available yet.
+                  </Typography>
+                </Box>
+              )}
+            </TabPanel>
 
-          <TabPanel value={tabValue} index={3}>
-            <PredictionHistory 
-              predictions={predictionHistory} 
-              onClear={handleClearHistory}
-            />
-          </TabPanel>
+            <TabPanel value={tabValue} index={3}>
+              <PredictionHistory
+                predictions={predictionHistory}
+                onClear={handleClearHistory}
+              />
+            </TabPanel>
 
-        </Container>
+          </Container>
+        </Box>
 
         {/* Professional Footer */}
         <Box 

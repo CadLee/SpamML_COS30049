@@ -1,17 +1,17 @@
 {
   "metadata": {
-    "created_at": "2025-11-09T05:31:19.715897Z",
-    "last_updated": "2025-11-09T05:31:29.232184Z",
+    "created_at": "2025-11-09T08:43:39.707500Z",
+    "last_updated": "2025-11-09T08:43:53.803120Z",
     "version": "1.0.2",
-    "total_predictions": 4,
-    "total_spam": 2,
-    "total_ham": 2,
-    "average_confidence": 25.11
+    "total_predictions": 6,
+    "total_spam": 3,
+    "total_ham": 3,
+    "average_confidence": 25.55
   },
   "predictions": [
     {
       "id": "pred_000001",
-      "timestamp": "2025-11-09T05:31:24.581155Z",
+      "timestamp": "2025-11-09T08:43:44.655683Z",
       "email_text": "CONGRATULATIONS!!! You've WON $1,000,000! Click here immediately to claim your prize NOW! Limited time offer!",
       "prediction": "Spam",
       "label": 1,
@@ -21,7 +21,7 @@
     },
     {
       "id": "pred_000002",
-      "timestamp": "2025-11-09T05:31:25.975862Z",
+      "timestamp": "2025-11-09T08:43:46.396066Z",
       "email_text": "Hi team, just a reminder that our meeting is scheduled for tomorrow at 2 PM in the conference room. Please bring your project updates.",
       "prediction": "Ham",
       "label": 0,
@@ -31,7 +31,7 @@
     },
     {
       "id": "pred_000003",
-      "timestamp": "2025-11-09T05:31:27.778393Z",
+      "timestamp": "2025-11-09T08:43:48.389761Z",
       "email_text": "Dear customer, your account has been compromised. Verify your credentials immediately by clicking this link to avoid suspension.",
       "prediction": "Spam",
       "label": 1,
@@ -41,13 +41,33 @@
     },
     {
       "id": "pred_000004",
-      "timestamp": "2025-11-09T05:31:29.232152Z",
+      "timestamp": "2025-11-09T08:43:50.288516Z",
       "email_text": "Hi John, just following up on our meeting last week. Please send me the project files when you get a chance. Thanks!",
       "prediction": "Ham",
       "label": 0,
       "confidence": 0.29015998727989334,
       "confidence_percentage": 29.015998727989334,
       "raw_score": -0.87047996183968
+    },
+    {
+      "id": "pred_000005",
+      "timestamp": "2025-11-09T08:43:51.853750Z",
+      "email_text": "CONGRATULATIONS!!! You've WON $1,000,000! Click here immediately to claim your prize NOW! Limited time offer!",
+      "prediction": "Spam",
+      "label": 1,
+      "confidence": 0.2475882234554042,
+      "confidence_percentage": 24.75882234554042,
+      "raw_score": 0.7427646703662126
+    },
+    {
+      "id": "pred_000006",
+      "timestamp": "2025-11-09T08:43:53.803092Z",
+      "email_text": "Hi team, just a reminder that our meeting is scheduled for tomorrow at 2 PM in the conference room. Please bring your project updates.",
+      "prediction": "Ham",
+      "label": 0,
+      "confidence": 0.2812334669384312,
+      "confidence_percentage": 28.12334669384312,
+      "raw_score": -0.8437004008152936
     }
   ]
 }
