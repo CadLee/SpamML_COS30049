@@ -74,5 +74,9 @@ class SpamDetector:
             "recall_ham": 0.87,
             "recall_spam": 0.94,
             "f1_ham": 0.90,
-            "f1_spam": 0.91
+            "f1_spam": 0.91,
+            "TN": 30374,
+            "FP": 4717,
+            "FN": 2055,
+            "TP": 34166
         }

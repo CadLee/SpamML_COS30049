@@ -4,7 +4,7 @@ import {
 } from '@mui/material';
 import { Download as DownloadIcon, Assessment as AssessmentIcon } from '@mui/icons-material';
 import { Grid2 as Grid } from '@mui/material';
-import { Pie, Bar, Line, Chart as ReactChart } from 'react-chartjs-2';
+import { Pie, Bar, Line } from 'react-chartjs-2';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -17,8 +17,10 @@ import {
   Tooltip,
   Legend
 } from 'chart.js';
-import { MatrixController, MatrixElement } from 'chartjs-chart-matrix';
-import { BoxPlot } from 'chartjs-chart-box-and-violin-plot';
+
+import BoxPlotD3 from './D3BoxPlot';
+import ConfusionMatrixD3 from './ConfusionMatrixD3';
+
 import axios from 'axios';
 
 // Register Chart.js components
@@ -31,16 +33,11 @@ ChartJS.register(
   ArcElement,
   Title,
   Tooltip,
-  Legend,
-  MatrixController,
-  MatrixElement,
-  BoxPlotController, 
-  BoxAndWhiskers
+  Legend
 );
 
-// ====================
+
 // Reusable Chart Card
-// ====================
 function ChartCard({ title, chartRef, children, height = 300, onDownload }) {
   return (
     <Card sx={{ bgcolor: '#1e3a5f', color: 'white', p: 2 }}>
@@ -61,9 +58,7 @@ function ChartCard({ title, chartRef, children, height = 300, onDownload }) {
   );
 }
 
-// ====================
 // Main Charts Component
-// ====================
 function Charts({ predictions }) {
   const [modelInfo, setModelInfo] = useState(null);
   const [chartFilter, setChartFilter] = useState('all');
@@ -72,9 +67,7 @@ function Charts({ predictions }) {
   const confidenceChartRef = useRef(null);
   const spamWordChartRef = useRef(null);
   const hamWordChartRef = useRef(null);
-  const boxPlotRef = useRef(null);
   const performanceChartRef = useRef(null);
-  const confusionMatrixRef = useRef(null);
 
   useEffect(() => {
     axios.get('http://localhost:8000/model-info')
@@ -84,9 +77,8 @@ function Charts({ predictions }) {
 
   if (predictions.length === 0) return null;
 
-  // ====================
+ 
   // Chart Data
-  // ====================
   const spamCount = predictions.filter(p => p.prediction === 'Spam').length;
   const hamCount = predictions.filter(p => p.prediction === 'Ham').length;
 
@@ -150,19 +142,6 @@ function Charts({ predictions }) {
   const spamWordsData = { labels: spamWords.map(w => w.word), datasets: [{ label: 'Frequency', data: spamWords.map(w => w.count), backgroundColor: '#f4433680', borderColor: '#f44336', borderWidth: 2 }] };
   const hamWordsData = { labels: hamWords.map(w => w.word), datasets: [{ label: 'Frequency', data: hamWords.map(w => w.count), backgroundColor: '#4caf5080', borderColor: '#4caf50', borderWidth: 2 }] };
 
-  const boxData = {
-    labels: ['Confidence'],
-    datasets: [{
-      label: 'Confidence',
-      data: [predictions.map(p => p.confidence_percentage)],
-      backgroundColor: '#1976d2',
-      borderColor: '#fff',
-      borderWidth: 2
-    }]
-  };
-
-  const boxOptions = { responsive: true, maintainAspectRatio: false, plugins: { legend: { labels: { color: 'white' } } } };
-
   const performanceData = modelInfo ? {
     labels: ['Precision (Ham)', 'Precision (Spam)', 'Recall (Ham)', 'Recall (Spam)', 'F1 (Ham)', 'F1 (Spam)'],
     datasets: [{
@@ -191,40 +170,7 @@ function Charts({ predictions }) {
     }
   };
 
-  const confusionData = modelInfo ? {
-    datasets: [{
-      label: 'Confusion Matrix',
-      data: [
-        { x: 0, y: 0, v: modelInfo.TN },
-        { x: 1, y: 0, v: modelInfo.FP },
-        { x: 0, y: 1, v: modelInfo.FN },
-        { x: 1, y: 1, v: modelInfo.TP }
-      ],
-      backgroundColor: ctx => {
-        const val = ctx.dataset.data[ctx.dataIndex].v;
-        const max = Math.max(modelInfo.TN, modelInfo.FP, modelInfo.FN, modelInfo.TP);
-        return `rgba(33, 150, 243, ${val / max})`;
-      },
-      width: ({ chart }) => (chart.chartArea?.width || 0) / 2 - 10,
-      height: ({ chart }) => (chart.chartArea?.height || 0) / 2 - 10
-    }]
-  } : null;
-
-  const confusionOptions = {
-    responsive: true,
-    plugins: {
-      legend: { display: false },
-      tooltip: { callbacks: { label: ctx => `Count: ${ctx.raw.v}` } }
-    },
-    scales: {
-      x: { type: 'category', labels: ['Ham (Pred)', 'Spam (Pred)'], offset: true, grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: 'white' } },
-      y: { type: 'category', labels: ['Ham (Actual)', 'Spam (Actual)'], offset: true, grid: { color: 'rgba(255,255,255,0.1)' }, ticks: { color: 'white' } }
-    }
-  };
-
-  // ====================
   // Render
-  // ====================
   return (
     <Box sx={{ mt: 4 }}>
       <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
@@ -284,8 +230,103 @@ function Charts({ predictions }) {
             </Grid>
 
             <Grid item xs={12} md={6}>
-              <ChartCard title="Confidence Statistics (Box Plot)" chartRef={boxPlotRef} height={300}>
-                <ReactChart ref={boxPlotRef} type="boxplot" data={boxData} options={boxOptions} />
+              <ChartCard
+                title="Confidence Distribution Box Plot"
+                height={450}
+              >
+                <Box sx={{ 
+                  height: 450, 
+                  bgcolor: '#2a2a2a', 
+                  borderRadius: 1,
+                  p: 2,
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center'
+                }}>
+                  <BoxPlotD3
+                    data={predictions.map(p => p.confidence_percentage)}
+                    title="Confidence Distribution"
+                  />
+                </Box>
+
+                {/* Statistics Display Below */}
+                <Box sx={{ 
+                  display: 'grid', 
+                  gridTemplateColumns: '1fr 1fr 1fr', 
+                  gap: 1.5, 
+                  mt: 2 
+                }}>
+                  {(() => {
+                    const confData = predictions.map(p => p.confidence_percentage).sort((a, b) => a - b);
+                    const n = confData.length;
+                    const stats = {
+                      min: confData[0],
+                      q1: confData[Math.floor(n * 0.25)],
+                      median: confData[Math.floor(n * 0.5)],
+                      mean: confData.reduce((a, b) => a + b) / n,
+                      q3: confData[Math.floor(n * 0.75)],
+                      max: confData[n - 1]
+                    };
+
+                    return (
+                      <>
+                        <Box sx={{ p: 1.5, bgcolor: '#1e1e1e', borderRadius: 1, border: '1px solid #f44336' }}>
+                          <Typography variant="caption" sx={{ fontWeight: 'bold', color: '#f44336' }}>
+                            Minimum
+                          </Typography>
+                          <Typography variant="h6" sx={{ color: 'white', fontWeight: 'bold' }}>
+                            {stats.min.toFixed(2)}%
+                          </Typography>
+                        </Box>
+
+                        <Box sx={{ p: 1.5, bgcolor: '#1e1e1e', borderRadius: 1, border: '1px solid #ff9800' }}>
+                          <Typography variant="caption" sx={{ fontWeight: 'bold', color: '#ff9800' }}>
+                            Q1 (25th Percentile)
+                          </Typography>
+                          <Typography variant="h6" sx={{ color: 'white', fontWeight: 'bold' }}>
+                            {stats.q1.toFixed(2)}%
+                          </Typography>
+                        </Box>
+
+                        <Box sx={{ p: 1.5, bgcolor: '#1e1e1e', borderRadius: 1, border: '1px solid #2196f3' }}>
+                          <Typography variant="caption" sx={{ fontWeight: 'bold', color: '#2196f3' }}>
+                            Median
+                          </Typography>
+                          <Typography variant="h6" sx={{ color: 'white', fontWeight: 'bold' }}>
+                            {stats.median.toFixed(2)}%
+                          </Typography>
+                        </Box>
+
+                        <Box sx={{ p: 1.5, bgcolor: '#1e1e1e', borderRadius: 1, border: '1px solid #1976d2' }}>
+                          <Typography variant="caption" sx={{ fontWeight: 'bold', color: '#1976d2' }}>
+                            Mean
+                          </Typography>
+                          <Typography variant="h6" sx={{ color: 'white', fontWeight: 'bold' }}>
+                            {stats.mean.toFixed(2)}%
+                          </Typography>
+                        </Box>
+
+                        <Box sx={{ p: 1.5, bgcolor: '#1e1e1e', borderRadius: 1, border: '1px solid #4caf50' }}>
+                          <Typography variant="caption" sx={{ fontWeight: 'bold', color: '#4caf50' }}>
+                            Q3 (75th Percentile)
+                          </Typography>
+                          <Typography variant="h6" sx={{ color: 'white', fontWeight: 'bold' }}>
+                            {stats.q3.toFixed(2)}%
+                          </Typography>
+                        </Box>
+
+                        <Box sx={{ p: 1.5, bgcolor: '#1e1e1e', borderRadius: 1, border: '1px solid #4caf50' }}>
+                          <Typography variant="caption" sx={{ fontWeight: 'bold', color: '#4caf50' }}>
+                            Maximum
+                          </Typography>
+                          <Typography variant="h6" sx={{ color: 'white', fontWeight: 'bold' }}>
+                            {stats.max.toFixed(2)}%
+                          </Typography>
+                        </Box>
+                      </>
+                    );
+                  })()}
+                </Box>
               </ChartCard>
             </Grid>
           </>
@@ -300,38 +341,16 @@ function Charts({ predictions }) {
             </Grid>
 
             <Grid item xs={12} md={6}>
-              <ChartCard title="Confusion Matrix (Heatmap)" chartRef={confusionMatrixRef} height={300}>
-                <ReactChart
-                  ref={confusionMatrixRef}
-                  type="matrix"
-                  data={{
-                    datasets: [{
-                      label: 'Confusion Matrix',
-                      data: [
-                        { x: 0, y: 0, v: modelInfo.TN },
-                        { x: 1, y: 0, v: modelInfo.FP },
-                        { x: 0, y: 1, v: modelInfo.FN },
-                        { x: 1, y: 1, v: modelInfo.TP }
-                      ],
-                      backgroundColor: ctx => {
-                        const max = Math.max(modelInfo.TN, modelInfo.FP, modelInfo.FN, modelInfo.TP);
-                        return `rgba(33, 150, 243, ${ctx.dataset.data[ctx.dataIndex].v / max})`;
-                      },
-                      width: ({ chart }) => ((chart.chartArea?.width || 0) / 2 - 10),
-                      height: ({ chart }) => ((chart.chartArea?.height || 0) / 2 - 10)
-                    }]
-                  }}
-                  options={{
-                    responsive: true,
-                    plugins: {
-                      legend: { display: false },
-                      tooltip: { callbacks: { label: ctx => `Count: ${ctx.raw.v}` } }
-                    },
-                    scales: {
-                      x: { type: 'category', labels: ['Ham (Pred)', 'Spam (Pred)'], offset: true, ticks: { color: 'white' } },
-                      y: { type: 'category', labels: ['Ham (Actual)', 'Spam (Actual)'], offset: true, ticks: { color: 'white' } }
-                    }
-                  }}
+              <ChartCard title="Confusion Matrix (Heatmap)" height={300}>
+                <ConfusionMatrixD3
+                  data={[
+                    { x: 0, y: 0, v: modelInfo.TN },
+                    { x: 1, y: 0, v: modelInfo.FP },
+                    { x: 0, y: 1, v: modelInfo.FN },
+                    { x: 1, y: 1, v: modelInfo.TP }
+                  ]}
+                  width={300}
+                  height={300}
                 />
               </ChartCard>
             </Grid>
