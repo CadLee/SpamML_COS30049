@@ -1,6 +1,6 @@
 import React from 'react';
 import {
-  Paper, Typography, Grid, Card, CardContent, Box, LinearProgress
+  Paper, Typography, Card, CardContent, Box, LinearProgress
 } from '@mui/material';
 import {
   BarChart as BarChartIcon,
@@ -8,6 +8,7 @@ import {
   CheckCircle as CheckCircleIcon,
   Warning as WarningIcon
 } from '@mui/icons-material';
+import { Grid2 as Grid } from '@mui/material';
 
 function Statistics({ statistics }) {
   if (!statistics || !statistics.statistics) {
