@@ -46,6 +46,35 @@ function EmailClassifier({ onPrediction }) {
   const characterCount = emailText.length;
   const wordCount = emailText.trim().split(/\s+/).filter(Boolean).length;
   const isValidLength = emailText.trim().length >= 10;
+  
+  // File drop
+  const [dragActive, setDragActive] = useState(false);
+
+   // Handles file reading
+  const handleFile = (file) => {
+    if (file && file.type === 'text/plain') {
+      const reader = new FileReader();
+      reader.onload = (e) => setEmailText(e.target.result);
+      reader.readAsText(file);
+    } else {
+      setError('Please upload a .txt file');
+    }
+  };
+
+  const handleDrop = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragActive(false);
+    const file = e.dataTransfer.files[0];
+    handleFile(file);
+  };
+
+  const handleDrag = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    if (e.type === 'dragenter' || e.type === 'dragover') setDragActive(true);
+    else if (e.type === 'dragleave') setDragActive(false);
+  };
 
   /**
    * Handles form submission and email classification
@@ -174,7 +203,7 @@ function EmailClassifier({ onPrediction }) {
   return (
     <Box sx={{ mb: 6 }}>
       <Paper elevation={0} sx={{ p: 4, bgcolor: 'background.paper', border: '1px solid', borderColor: 'divider' }}>
-        
+
         {/* Section Header */}
         <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
           <Box sx={{ width: 4, height: 24, bgcolor: 'primary.main', mr: 2 }} />
@@ -182,34 +211,47 @@ function EmailClassifier({ onPrediction }) {
             Email Classification
           </Typography>
         </Box>
-        
-        <form onSubmit={handleSubmit}>
-          {/* Text Input Field */}
-          <TextField
-            fullWidth
-            multiline
-            rows={6}
-            variant="outlined"
-            label="Enter Email Content"
-            placeholder="Paste or type email content here for analysis..."
-            value={emailText}
-            onChange={(e) => setEmailText(e.target.value)}
-            sx={{ mb: 1 }}
-            disabled={loading}
-            error={error && !emailText.trim()}
-          />
 
-          {/* Character and Word Counter */}
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 3, px: 1 }}>
-            <Typography variant="caption" color="text.secondary" sx={{ fontWeight: 500 }}>
-              {characterCount} characters • {wordCount} words
-            </Typography>
-            {emailText.trim().length > 0 && !isValidLength && (
-              <Typography variant="caption" color="error" sx={{ fontWeight: 600 }}>
-                Minimum 10 characters required
-              </Typography>
-            )}
+        <form onSubmit={handleSubmit}>
+          {/* Drag & Drop Input Area */}
+          <Box
+            onDragEnter={handleDrag}
+            onDragOver={handleDrag}
+            onDragLeave={handleDrag}
+            onDrop={handleDrop}
+            sx={{
+              p: 1,             // padding inside box
+              mb: 3,
+              textAlign: 'center',
+              bgcolor: dragActive ? '#f0f8ff' : 'background.paper',
+              transition: '0.2s',
+              borderRadius: 2,
+              border: dragActive ? '2px dashed #1976d2' : 'none'
+            }}
+          >
+            <TextField
+              fullWidth
+              multiline
+              rows={6}
+              variant="outlined"   // this gives the inner outline
+              label="Paste, type, or drop a .txt file here..."
+              value={emailText}
+              onChange={(e) => setEmailText(e.target.value)}
+              disabled={loading}
+            />
           </Box>
+
+            {/* Character and Word Counter */}
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 1, px: 1 }}>
+              <Typography variant="caption" color="text.secondary">
+                {characterCount} characters • {wordCount} words
+              </Typography>
+              {!isValidLength && emailText.trim().length > 0 && (
+                <Typography variant="caption" color="error">
+                  Minimum 10 characters required
+                </Typography>
+              )}
+            </Box>
 
           {/* Action Buttons */}
           <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
