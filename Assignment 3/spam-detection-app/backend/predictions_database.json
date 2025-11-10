@@ -1,12 +1,12 @@
 {
   "metadata": {
     "created_at": "2025-11-09T08:43:39.707500Z",
-    "last_updated": "2025-11-09T08:43:53.803120Z",
+    "last_updated": "2025-11-10T00:54:03.450484Z",
     "version": "1.0.2",
-    "total_predictions": 6,
-    "total_spam": 3,
-    "total_ham": 3,
-    "average_confidence": 25.55
+    "total_predictions": 10,
+    "total_spam": 5,
+    "total_ham": 5,
+    "average_confidence": 25.38
   },
   "predictions": [
     {
@@ -68,6 +68,46 @@
       "confidence": 0.2812334669384312,
       "confidence_percentage": 28.12334669384312,
       "raw_score": -0.8437004008152936
+    },
+    {
+      "id": "pred_000007",
+      "timestamp": "2025-11-10T00:53:58.437037Z",
+      "email_text": "CONGRATULATIONS!!! You've WON $1,000,000! Click here immediately to claim your prize NOW! Limited time offer!",
+      "prediction": "Spam",
+      "label": 1,
+      "confidence": 0.2475882234554042,
+      "confidence_percentage": 24.75882234554042,
+      "raw_score": 0.7427646703662126
+    },
+    {
+      "id": "pred_000008",
+      "timestamp": "2025-11-10T00:54:00.013887Z",
+      "email_text": "Hi team, just a reminder that our meeting is scheduled for tomorrow at 2 PM in the conference room. Please bring your project updates.",
+      "prediction": "Ham",
+      "label": 0,
+      "confidence": 0.2812334669384312,
+      "confidence_percentage": 28.12334669384312,
+      "raw_score": -0.8437004008152936
+    },
+    {
+      "id": "pred_000009",
+      "timestamp": "2025-11-10T00:54:01.437068Z",
+      "email_text": "Dear customer, your account has been compromised. Verify your credentials immediately by clicking this link to avoid suspension.",
+      "prediction": "Spam",
+      "label": 1,
+      "confidence": 0.18543330587523063,
+      "confidence_percentage": 18.543330587523062,
+      "raw_score": 0.5562999176256919
+    },
+    {
+      "id": "pred_000010",
+      "timestamp": "2025-11-10T00:54:03.450469Z",
+      "email_text": "Hi John, just following up on our meeting last week. Please send me the project files when you get a chance. Thanks!",
+      "prediction": "Ham",
+      "label": 0,
+      "confidence": 0.29015998727989334,
+      "confidence_percentage": 29.015998727989334,
+      "raw_score": -0.87047996183968
     }
   ]
 }
