@@ -18,7 +18,7 @@
 import React, { useState } from 'react';
 import {
   Paper, TextField, Button, Box, Typography, Alert, CircularProgress,
-  Card, CardContent, Chip, Grid, LinearProgress, IconButton, Divider
+  Card, CardContent, Chip, LinearProgress, IconButton, Divider
 } from '@mui/material';
 import {
   Send as SendIcon,
@@ -27,46 +27,39 @@ import {
   Clear as ClearIcon,
   ContentCopy as CopyIcon
 } from '@mui/icons-material';
+import { Grid2 as Grid } from '@mui/material';
 import axios from 'axios';
 
+// State: Email text input
 function EmailClassifier({ onPrediction }) {
-  // State: Email text input
   const [emailText, setEmailText] = useState('');
-  
-  // State: Loading indicator during API call
   const [loading, setLoading] = useState(false);
-  
-  // State: Prediction result from backend
-  const [result, setResult] = useState(null);
-  
-  // State: Error messages for user feedback
+  const [results, setResults] = useState([]);
   const [error, setError] = useState('');
+  const [dragActive, setDragActive] = useState(false);
 
-  // Calculate text statistics for user feedback
   const characterCount = emailText.length;
   const wordCount = emailText.trim().split(/\s+/).filter(Boolean).length;
   const isValidLength = emailText.trim().length >= 10;
-  
-  // File drop
-  const [dragActive, setDragActive] = useState(false);
-
-   // Handles file reading
-  const handleFile = (file) => {
-    if (file && file.type === 'text/plain') {
-      const reader = new FileReader();
-      reader.onload = (e) => setEmailText(e.target.result);
-      reader.readAsText(file);
-    } else {
-      setError('Please upload a .txt file');
-    }
-  };
 
   const handleDrop = (e) => {
     e.preventDefault();
     e.stopPropagation();
     setDragActive(false);
-    const file = e.dataTransfer.files[0];
-    handleFile(file);
+
+    const files = Array.from(e.dataTransfer.files);
+
+    files.forEach(file => {
+      if (file.type === 'text/plain') {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          classifyEmail(event.target.result);
+        };
+        reader.readAsText(file);
+      } else {
+        setError('Only .txt files are allowed');
+      }
+    });
   };
 
   const handleDrag = (e) => {
@@ -85,79 +78,41 @@ function EmailClassifier({ onPrediction }) {
    * 3. Displays result or error message
    * 4. Calls parent callback with prediction data
    * 
-   * @param {Event} e - Form submit event
+   * param {Event} e - Form submit event
    */
+
   const handleSubmit = async (e) => {
     e.preventDefault();
-    
-    // Input validation
-    if (!emailText.trim()) {
-      setError('Please enter email text');
+    await classifyEmail(emailText);
+  };
+
+  const classifyEmail = async (text) => {
+    if (!text.trim() || text.trim().length < 10) {
+      setError('Each email must have at least 10 characters');
       return;
     }
-
-    if (!isValidLength) {
-      setError('Email text must be at least 10 characters long');
-      return;
-    }
-
-    // Start loading state
-    setLoading(true);
-    setError('');
-    setResult(null);
 
     try {
-      // Send classification request to backend
-      const response = await axios.post('http://localhost:8000/predict', {
-        text: emailText
-      });
-
-      // Create prediction object with timestamp
-      const prediction = {
-        ...response.data,
-        timestamp: new Date().toISOString(),
-        text: emailText
-      };
-
-      // Update state and notify parent
-      setResult(prediction);
+      setLoading(true);
+      setError('');
+      const response = await axios.post('http://localhost:8000/predict', { text });
+      const prediction = { ...response.data, timestamp: new Date().toISOString(), text };
+      setResults(prev => [...prev, prediction]);
       onPrediction(prediction);
-
     } catch (err) {
-      // Handle different types of errors
       console.error('Classification error:', err);
-      
-      if (err.response) {
-        // Backend returned error response
-        setError(err.response?.data?.detail || 'Classification failed. Please try again.');
-      } else if (err.request) {
-        // Network error - backend not reachable
-        setError('Cannot connect to server. Please ensure the backend is running on http://localhost:8000');
-      } else {
-        // Other errors
-        setError('An unexpected error occurred. Please try again.');
-      }
+      setError('Failed to classify one or more emails.');
     } finally {
-      // Always stop loading, even if error occurred
       setLoading(false);
     }
   };
 
-  /**
-   * Clears input field and resets component state
-   * Allows user to start fresh classification
-   */
   const handleClear = () => {
     setEmailText('');
-    setResult(null);
+    setResults([]);
     setError('');
   };
 
-  /**
-   * Pre-defined example emails for quick testing
-   * Includes 2 spam examples and 2 ham (legitimate) examples
-   * Helps users understand what types of emails the model can classify
-   */
   const exampleEmails = [
     {
       label: "Spam Example 1",
@@ -177,25 +132,15 @@ function EmailClassifier({ onPrediction }) {
     }
   ];
 
-  /**
-   * Loads example email text into input field
-   * Clears any previous results or errors
-   * 
-   * @param {String} example - Email text to load
-   */
   const loadExample = (example) => {
     setEmailText(example);
-    setResult(null);
     setError('');
   };
 
-  /**
-   * Copies prediction results to clipboard
-   * Format: Prediction, Confidence, Email text
-   */
   const copyToClipboard = () => {
-    if (result) {
-      const text = `Prediction: ${result.prediction}\nConfidence: ${result.confidence_percentage.toFixed(2)}%\nEmail: ${result.text}`;
+    if (results.length > 0) {
+      const lastResult = results[results.length - 1];
+      const text = `Prediction: ${lastResult.prediction}\nConfidence: ${lastResult.confidence_percentage.toFixed(2)}%\nEmail: ${lastResult.text}`;
       navigator.clipboard.writeText(text);
     }
   };
@@ -203,13 +148,10 @@ function EmailClassifier({ onPrediction }) {
   return (
     <Box sx={{ mb: 6 }}>
       <Paper elevation={0} sx={{ p: 4, bgcolor: 'background.paper', border: '1px solid', borderColor: 'divider' }}>
-
         {/* Section Header */}
         <Box sx={{ display: 'flex', alignItems: 'center', mb: 3 }}>
           <Box sx={{ width: 4, height: 24, bgcolor: 'primary.main', mr: 2 }} />
-          <Typography variant="h5" sx={{ fontWeight: 600 }}>
-            Email Classification
-          </Typography>
+          <Typography variant="h5" sx={{ fontWeight: 600 }}>Email Classification</Typography>
         </Box>
 
         <form onSubmit={handleSubmit}>
@@ -220,7 +162,7 @@ function EmailClassifier({ onPrediction }) {
             onDragLeave={handleDrag}
             onDrop={handleDrop}
             sx={{
-              p: 1,             // padding inside box
+              p: 1,
               mb: 3,
               textAlign: 'center',
               bgcolor: dragActive ? '#f0f8ff' : 'background.paper',
@@ -233,7 +175,7 @@ function EmailClassifier({ onPrediction }) {
               fullWidth
               multiline
               rows={6}
-              variant="outlined"   // this gives the inner outline
+              variant="outlined"
               label="Paste, type, or drop a .txt file here..."
               value={emailText}
               onChange={(e) => setEmailText(e.target.value)}
@@ -241,17 +183,15 @@ function EmailClassifier({ onPrediction }) {
             />
           </Box>
 
-            {/* Character and Word Counter */}
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 1, px: 1 }}>
-              <Typography variant="caption" color="text.secondary">
-                {characterCount} characters • {wordCount} words
-              </Typography>
-              {!isValidLength && emailText.trim().length > 0 && (
-                <Typography variant="caption" color="error">
-                  Minimum 10 characters required
-                </Typography>
-              )}
-            </Box>
+          {/* Character and Word Counter */}
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', mt: 1, px: 1 }}>
+            <Typography variant="caption" color="text.secondary">
+              {characterCount} characters • {wordCount} words
+            </Typography>
+            {!isValidLength && emailText.trim().length > 0 && (
+              <Typography variant="caption" color="error">Minimum 10 characters required</Typography>
+            )}
+          </Box>
 
           {/* Action Buttons */}
           <Box sx={{ display: 'flex', gap: 2, mb: 3 }}>
@@ -279,84 +219,68 @@ function EmailClassifier({ onPrediction }) {
           </Box>
         </form>
 
-        {/* Error Display */}
-        {error && (
-          <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError('')}>
-            {error}
-          </Alert>
-        )}
+        {error && <Alert severity="error" sx={{ mb: 3 }} onClose={() => setError('')}>{error}</Alert>}
 
-        {/* Result Display */}
-        {result && (
-          <Card sx={{ 
-            mt: 3, 
-            bgcolor: result.prediction === 'Spam' ? '#fef2f2' : '#f0fdf4',
+        {results.length > 0 && results.map((res, idx) => (
+          <Card key={idx} sx={{
+            mt: 3,
+            bgcolor: res.prediction === 'Spam' ? '#fef2f2' : '#f0fdf4',
             border: '2px solid',
-            borderColor: result.prediction === 'Spam' ? 'secondary.main' : 'success.main'
+            borderColor: res.prediction === 'Spam' ? 'secondary.main' : 'success.main'
           }}>
             <CardContent sx={{ p: 3 }}>
               <Grid container spacing={3} alignItems="center">
-                
-                {/* Prediction Label */}
                 <Grid item xs={12} md={6}>
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                    {result.prediction === 'Spam' ? (
+                    {res.prediction === 'Spam' ? (
                       <WarningIcon color="error" sx={{ fontSize: 48 }} />
                     ) : (
                       <CheckCircleIcon color="success" sx={{ fontSize: 48 }} />
                     )}
                     <Box>
-                      <Typography variant="h4" sx={{ fontWeight: 700, mb: 1 }}>
-                        {result.prediction.toUpperCase()}
-                      </Typography>
+                      <Typography variant="h4" sx={{ fontWeight: 700, mb: 1 }}>{res.prediction.toUpperCase()}</Typography>
                       <Chip
-                        label={result.prediction === 'Spam' ? 'POTENTIALLY DANGEROUS' : 'LEGITIMATE EMAIL'}
-                        color={result.prediction === 'Spam' ? 'error' : 'success'}
+                        label={res.prediction === 'Spam' ? 'POTENTIALLY DANGEROUS' : 'LEGITIMATE EMAIL'}
+                        color={res.prediction === 'Spam' ? 'error' : 'success'}
                         size="small"
                         sx={{ fontWeight: 600 }}
                       />
                     </Box>
                   </Box>
                 </Grid>
-                
-                {/* Confidence Score */}
                 <Grid item xs={12} md={6}>
                   <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 1 }}>
                     <Typography variant="body2" sx={{ fontWeight: 600, textTransform: 'uppercase' }}>
-                      Confidence: {result.confidence_percentage.toFixed(2)}%
+                      Confidence: {res.confidence_percentage.toFixed(2)}%
                     </Typography>
                     <IconButton size="small" onClick={copyToClipboard} title="Copy Results">
                       <CopyIcon fontSize="small" />
                     </IconButton>
                   </Box>
-                  
-                  {/* Confidence Progress Bar */}
                   <LinearProgress
                     variant="determinate"
-                    value={result.confidence_percentage}
+                    value={res.confidence_percentage}
                     sx={{
                       height: 12,
                       bgcolor: 'rgba(0,0,0,0.1)',
                       '& .MuiLinearProgress-bar': {
-                        bgcolor: result.prediction === 'Spam' ? 'error.main' : 'success.main',
+                        bgcolor: res.prediction === 'Spam' ? 'error.main' : 'success.main',
                       }
                     }}
                   />
-                  
-                  {/* Additional Metrics */}
                   <Box sx={{ mt: 1, display: 'flex', gap: 2 }}>
                     <Typography variant="caption" color="text.secondary">
-                      Raw Score: {result.raw_score?.toFixed(4) || 'N/A'}
+                      Raw Score: {res.raw_score?.toFixed(4) || 'N/A'}
                     </Typography>
                     <Typography variant="caption" color="text.secondary">
-                      Label: {result.label}
+                      Label: {res.label}
                     </Typography>
                   </Box>
                 </Grid>
               </Grid>
             </CardContent>
           </Card>
-        )}
+        ))}
 
         <Divider sx={{ my: 4 }} />
 
@@ -372,8 +296,8 @@ function EmailClassifier({ onPrediction }) {
                   variant="outlined"
                   size="small"
                   fullWidth
-                  sx={{ 
-                    justifyContent: 'flex-start', 
+                  sx={{
+                    justifyContent: 'flex-start',
                     textTransform: 'none',
                     py: 1.5,
                     px: 2,
