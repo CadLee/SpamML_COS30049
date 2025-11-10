@@ -144,5 +144,7 @@ This project is for educational purposes as part of COS30049 coursework.
 
 ### Acknowledgments
 - Dataset: Combined Kaggle spam datasets and course-provided data
-- Libraries: Scikit-learn, FastAPI, React, Material-UI, Chart.js, D3
+- Libraries:
+    Frontend: React, Material UI, Chart.js, D3, Axios, React DOM, React Scripts, Web Vitals
+    Backend: FastAPI, Scikit-learn, Pandas, NumPy, Joblib
 ```
